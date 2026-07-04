@@ -283,7 +283,6 @@ input,select,textarea{font-family:var(--font-b);}
     <button class="btn btn-gold btn-block" onclick="showScreen('login')">🔑 התחברות</button>
     <button class="btn btn-teal btn-block" onclick="startRegister()">📝 הרשמה</button>
   </div>
-  <button class="pill" style="margin-top:18px;" onclick="showScreen('parent-login')">👨‍👩‍👧 כניסת הורים / מורים</button>
 </section>
 
 <!-- ================= LOGIN ================= -->
@@ -324,6 +323,10 @@ input,select,textarea{font-family:var(--font-b);}
     <div class="field"><label>תוכנית לימודים</label>
       <select id="ob-curriculum"><option>תוכנית משרד החינוך</option><option>בגרויות מוגברות</option><option>לימוד עצמאי / העשרה</option></select>
     </div>
+    <div class="field">
+      <label>קוד בקרת הורים (4 ספרות) — ליצירת לוח בקרה להורים</label>
+      <input id="ob-parentcode" inputmode="numeric" maxlength="4" placeholder="למשל 1234">
+    </div>
     <button class="btn btn-gold btn-block" onclick="obNext(3)">המשך</button>
   </div>
 
@@ -333,16 +336,6 @@ input,select,textarea{font-family:var(--font-b);}
     <div class="avatar-pick" id="ob-emoji-picker"></div>
     <button class="btn btn-teal btn-block" style="margin-top:22px;" onclick="finishOnboarding()">בואו נתחיל ללמוד 🚀</button>
   </div>
-</section>
-
-<!-- ================= PARENT / TEACHER LOGIN ================= -->
-<section class="screen" id="screen-parent-login">
-  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>👨‍👩‍👧 כניסת הורים / מורים</h2><div style="width:38px"></div></div>
-  <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:14px;">הזן/י שם משתמש וסיסמה של כל ילד/ה שברצונך להתחבר אליו/ה. אפשר להוסיף כמה ילדים.</p>
-  <div id="parent-login-rows"></div>
-  <button class="btn btn-ghost btn-block" style="margin-bottom:14px;" onclick="addParentLoginRow()">➕ הוסף ילד/ה</button>
-  <div id="parent-login-error" style="color:var(--coral); font-size:12.5px; margin-bottom:10px; display:none;"></div>
-  <button class="btn btn-gold btn-block" onclick="connectParent()">התחבר</button>
 </section>
 
 
@@ -533,7 +526,7 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('edit-profile')">✏️ עריכת פרטים אישיים</button>
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('avatar')">🦊 עריכת אווטאר</button>
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('statistics')">📊 סטטיסטיקות מלאות</button>
-  <button class="btn btn-block hidden" id="back-to-parent-btn" style="margin-bottom:10px;" onclick="exitParentMode()">🔙 חזרה למצב הורה</button>
+  <button class="btn btn-block" style="margin-bottom:10px;" onclick="requestParentAccess()">👨‍👩‍👧 לוח בקרה להורים</button>
   <button class="btn btn-ghost btn-block" onclick="logout()">🚪 התנתקות</button>
 </section>
 
@@ -558,6 +551,9 @@ input,select,textarea{font-family:var(--font-b);}
   <div class="field"><label>תוכנית לימודים</label>
     <select id="ep-curriculum"><option>תוכנית משרד החינוך</option><option>בגרויות מוגברות</option><option>לימוד עצמאי / העשרה</option></select>
   </div>
+  <div class="field"><label>קוד בקרת הורים חדש (4 ספרות, השאר ריק אם לא רוצים לשנות)</label>
+    <input id="ep-parentcode" inputmode="numeric" maxlength="4" placeholder="קוד חדש">
+  </div>
   <button class="btn btn-gold btn-block" onclick="saveProfileEdits()">💾 שמור שינויים</button>
 </section>
 
@@ -573,9 +569,7 @@ input,select,textarea{font-family:var(--font-b);}
 
 <!-- ================= PARENT DASHBOARD ================= -->
 <section class="screen" id="screen-parent-dash">
-  <div class="topbar"><button class="back-btn" onclick="exitParentMode()">→</button><h2>👨‍👩‍👧 לוח בקרה להורים</h2><div style="width:38px"></div></div>
-  <div class="diff-tabs" id="pd-child-tabs"></div>
-  <button class="btn btn-teal btn-block" style="margin-bottom:16px;" onclick="enterAsChild()">🔓 היכנס/י לחשבון של <span id="pd-enter-name"></span></button>
+  <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>👨‍👩‍👧 לוח בקרה להורים</h2><div style="width:38px"></div></div>
   <div class="card" style="margin-bottom:14px;">
     <div class="stat-block"><span>זמן למידה היום</span><b id="pd-today">0 דק'</b></div>
     <div class="stat-block"><span>רצף ימים</span><b id="pd-streak">0</b></div>
@@ -694,12 +688,12 @@ const DAILY_TIPS = [
 // כל החשבונות (ילדים) על המכשיר הזה נשמרים במילון אחד לפי שם משתמש.
 // session קובע מי מחובר כרגע: תלמיד בודד, או הורה/מורה שמחובר לכמה ילדים.
 let accounts = {};   // { username: fullAccountState }
-let session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
+let session = {mode:null, username:null};
 let state = null;    // תמיד מצביע על חשבון הילד הפעיל כרגע (לתלמיד או לצפייה כהורה)
 
 function defaultState(){
   return {
-    profile:{name:'', password:'', age:'', grade:'', lang:'he', country:'', curriculum:'', avatar:'🦊', avatarColor:'#2a2f5c'},
+    profile:{name:'', password:'', parentCode:'', age:'', grade:'', lang:'he', country:'', curriculum:'', avatar:'🦊', avatarColor:'#2a2f5c'},
     level:1, xp:0, coins:20, streak:0, lastActiveDate:null,
     dailyGoal:30, todayMinutes:0, todayDate:null,
     blockGames:false,
@@ -722,7 +716,6 @@ function loadAccounts(){
 }
 function loadSession(){
   try{ session = JSON.parse(localStorage.getItem('aiTeacherSession')||'null') || {mode:null}; }catch(e){ session = {mode:null}; }
-  if(!Array.isArray(session.parentChildren)) session.parentChildren = [];
 }
 function migrateAccount(acc){
   const d = defaultState();
@@ -774,11 +767,6 @@ function showScreen(name){
   if(name==='teacher-dash') renderTeacherDash();
   if(name==='quiz-setup') renderQuizSetup();
   if(name==='edit-profile') renderEditProfile();
-  if(name==='parent-login') renderParentLoginRows();
-  if(name==='settings'){
-    const btn = document.getElementById('back-to-parent-btn');
-    if(btn) btn.classList.toggle('hidden', !(session.mode==='student' && session.parentChildren && session.parentChildren.length));
-  }
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -832,6 +820,7 @@ function obNext(step){
     window._newProfile.lang = document.getElementById('ob-lang').value;
     window._newProfile.country = document.getElementById('ob-country').value;
     window._newProfile.curriculum = document.getElementById('ob-curriculum').value;
+    window._newProfile.parentCode = (document.getElementById('ob-parentcode').value.trim()||'').slice(0,4);
     window._newProfile.avatar = window._newProfile.avatar || '🦊';
   }
   ['1','2','3'].forEach(n=>{
@@ -863,7 +852,7 @@ function finishOnboarding(){
 }
 function logout(){
   if(confirm('להתנתק? כל ההתקדמות שלך תישמר במכשיר זה, ותוכל/י להתחבר שוב.')){
-    session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
+    session = {mode:null, username:null};
     saveState();
     showScreen('splash');
   }
@@ -877,6 +866,7 @@ function renderEditProfile(){
   document.getElementById('ep-lang').value = p.lang||'he';
   document.getElementById('ep-country').value = p.country||'ישראל';
   document.getElementById('ep-curriculum').value = p.curriculum||'תוכנית משרד החינוך';
+  document.getElementById('ep-parentcode').value = '';
 }
 function saveProfileEdits(){
   const newName = document.getElementById('ep-name').value.trim() || state.profile.name;
@@ -886,13 +876,12 @@ function saveProfileEdits(){
     delete accounts[oldName];
     state.profile.name = newName;
     accounts[newName] = state;
-    if(session.mode==='student' && session.username===oldName) session.username = newName;
-    if(session.parentActiveChild===oldName) session.parentActiveChild = newName;
-    const idx = session.parentChildren.indexOf(oldName);
-    if(idx>-1) session.parentChildren[idx] = newName;
+    if(session.username===oldName) session.username = newName;
   }
   const newPass = document.getElementById('ep-password').value.trim();
   if(newPass) state.profile.password = newPass;
+  const newCode = document.getElementById('ep-parentcode').value.trim().slice(0,4);
+  if(newCode) state.profile.parentCode = newCode;
   state.profile.age = document.getElementById('ep-age').value;
   state.profile.grade = document.getElementById('ep-grade').value;
   state.profile.lang = document.getElementById('ep-lang').value;
@@ -1491,72 +1480,22 @@ function renderStatistics(){
 /* =========================================================
    PARENT / TEACHER LOGIN (connect to existing child accounts)
 ========================================================= */
-let parentLoginRowCount = 0;
-function renderParentLoginRows(){
-  parentLoginRowCount = 0;
-  document.getElementById('parent-login-rows').innerHTML = '';
-  document.getElementById('parent-login-error').style.display = 'none';
-  addParentLoginRow();
-}
-function addParentLoginRow(){
-  parentLoginRowCount++;
-  const id = parentLoginRowCount;
-  const wrap = document.getElementById('parent-login-rows');
-  const row = document.createElement('div');
-  row.className = 'card';
-  row.style.marginBottom = '10px';
-  row.innerHTML = `
-    <div class="field"><label>שם משתמש של הילד/ה</label><input id="pl-user-${id}" placeholder="שם משתמש"></div>
-    <div class="field" style="margin-bottom:0;"><label>סיסמה</label><input id="pl-pass-${id}" type="password" placeholder="סיסמה"></div>
-  `;
-  wrap.appendChild(row);
-}
-function connectParent(){
-  const rows = document.querySelectorAll('#parent-login-rows .card');
-  const validUsernames = [];
-  let anyFilled = false;
-  rows.forEach((row,i)=>{
-    const uInput = row.querySelector('input[id^="pl-user-"]').value.trim();
-    const p = row.querySelector('input[id^="pl-pass-"]').value.trim();
-    if(!uInput) return;
-    anyFilled = true;
-    // מציאת שם המשתמש המדויק כפי שנשמר, בלי רגישות לאותיות גדולות/קטנות
-    const realUsername = Object.keys(accounts).find(u => u.toLowerCase() === uInput.toLowerCase());
-    const acc = realUsername ? accounts[realUsername] : null;
-    if(acc && (acc.profile.password||'')===p) validUsernames.push(realUsername);
-  });
-  const err = document.getElementById('parent-login-error');
-  if(!anyFilled){ err.textContent='הזן/י לפחות שם משתמש וסיסמה אחד'; err.style.display='block'; return; }
-  if(validUsernames.length===0){ err.textContent='לא נמצא אף חשבון תואם — בדוק/י שם משתמש וסיסמה'; err.style.display='block'; return; }
-  err.style.display='none';
-  session.mode = 'parent';
-  session.parentChildren = validUsernames;
-  session.parentActiveChild = validUsernames[0];
-  state = accounts[session.parentActiveChild];
-  saveState();
+function requestParentAccess(){
+  const code = state.profile.parentCode;
+  if(!code){
+    showToast('לא הוגדר קוד בקרת הורים — הגדר/י אחד בעריכת פרטים אישיים');
+    return;
+  }
+  const entered = prompt('הזן/י קוד בקרת הורים (4 ספרות):');
+  if(entered === null) return;
+  if(entered.trim() !== code){ showToast('קוד שגוי 😕'); return; }
   showScreen('parent-dash');
-  const skipped = rows.length - validUsernames.length;
-  showToast(skipped>0 ? `מחובר/ת ל-${validUsernames.length} חשבונות (${skipped} לא נמצאו)` : `מחובר/ת ל-${validUsernames.length} חשבונות`);
-}
-function exitParentMode(){
-  session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
-  state = null;
-  saveState();
-  showScreen('splash');
 }
 
 /* =========================================================
    PARENT DASHBOARD
 ========================================================= */
 function renderParentDash(){
-  const tabsWrap = document.getElementById('pd-child-tabs');
-  tabsWrap.innerHTML = session.parentChildren.map(u=>{
-    const acc = accounts[u];
-    const name = acc ? acc.profile.name : u;
-    return `<button class="diff-tab ${u===session.parentActiveChild?'sel':''}" onclick="switchChildTab('${u}')">${name}</button>`;
-  }).join('');
-  document.getElementById('pd-enter-name').textContent = state.profile.name;
-
   document.getElementById('pd-today').textContent = state.todayMinutes+' דק\'';
   document.getElementById('pd-streak').textContent = state.streak;
   document.getElementById('pd-level').textContent = state.level;
@@ -1569,19 +1508,6 @@ function renderParentDash(){
     : `<span style="color:var(--text-dim); font-size:13px;">אין עדיין נושאים חלשים מזוהים 🙂</span>`;
   document.getElementById('pd-goal').value = state.dailyGoal;
   document.getElementById('pd-block-toggle').classList.toggle('on', state.blockGames);
-}
-function switchChildTab(username){
-  session.parentActiveChild = username;
-  state = accounts[username];
-  saveState();
-  renderParentDash();
-}
-function enterAsChild(){
-  const username = session.parentActiveChild;
-  setActiveStudent(username);
-  saveState();
-  showScreen('home');
-  showToast('נכנסת לחשבון של '+state.profile.name);
 }
 function toggleBlockGames(){
   state.blockGames = !state.blockGames;
@@ -1630,12 +1556,7 @@ function init(){
   loadAccounts();
   loadSession();
   // ניקוי הגנתי: אם session מצביע על username שכבר לא קיים ב-accounts (נמחק/שם שונה), מתאפס
-  if(session.mode==='student' && !accounts[session.username]) session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
-  if(session.mode==='parent'){
-    session.parentChildren = session.parentChildren.filter(u=>accounts[u]);
-    if(session.parentChildren.length===0) session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
-    else if(!accounts[session.parentActiveChild]) session.parentActiveChild = session.parentChildren[0];
-  }
+  if(session.mode==='student' && !accounts[session.username]) session = {mode:null, username:null};
   Object.keys(accounts).forEach(u=> migrateAccount(accounts[u]));
 
   if(session.mode==='student'){
@@ -1643,10 +1564,6 @@ function init(){
     document.body.classList.toggle('light', !state.darkMode);
     ensureDailyReset();
     showScreen('home');
-  } else if(session.mode==='parent'){
-    state = accounts[session.parentActiveChild];
-    document.body.classList.toggle('light', !state.darkMode);
-    showScreen('parent-dash');
   } else {
     showScreen('splash');
   }
