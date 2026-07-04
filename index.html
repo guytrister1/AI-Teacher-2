@@ -642,7 +642,7 @@ input,select,textarea{font-family:var(--font-b);}
     <div class="wb-response" id="wb-response"></div>
     <div class="wb-toolbar">
       <button class="btn btn-ghost" onclick="clearWhiteboard()">🗑️ נקה</button>
-      <button class="btn btn-gold" onclick="sendWhiteboardToAI()">🤖 שלח ל-AI</button>
+      <button class="btn btn-gold" id="wb-send-btn" onclick="sendWhiteboardToAI()">🤖 שלח ל-AI</button>
     </div>
   </div>
 </div>
@@ -1169,9 +1169,11 @@ function sanitizeAIText(t){
    WHITEBOARD
 ========================================================= */
 let wbCtx = null, wbDrawing = false, wbLastX = 0, wbLastY = 0, wbContext = '';
-function openWhiteboard(contextText){
+function openWhiteboard(contextText, allowSend){
+  if(allowSend === undefined) allowSend = true;
   wbContext = contextText || '';
   document.getElementById('wb-modal').classList.remove('hidden');
+  document.getElementById('wb-send-btn').classList.toggle('hidden', !allowSend);
   const resp = document.getElementById('wb-response');
   resp.classList.remove('show'); resp.textContent = '';
   const canvas = document.getElementById('wb-canvas');
@@ -1344,7 +1346,7 @@ function renderQuestion(container, q, isQuiz, meta){
     ${!isQuiz? `<button class="btn btn-teal btn-block hidden" id="next-q-btn" onclick="loadPracticeQuestion()">שאלה הבאה ➡️</button>`:''}
   `;
   const wbBtn = document.getElementById('q-wb-btn');
-  if(wbBtn) wbBtn.onclick = ()=> openWhiteboard(q.question);
+  if(wbBtn) wbBtn.onclick = ()=> openWhiteboard(q.question, false);
 }
 function selectAnswer(i, isQuiz){
   if(isQuiz) return selectQuizAnswer(i);
