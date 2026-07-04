@@ -791,13 +791,14 @@ function showToast(msg){
    AUTH: LOGIN / REGISTER (student accounts)
 ========================================================= */
 function doLogin(){
-  const u = document.getElementById('login-username').value.trim();
+  const uInput = document.getElementById('login-username').value.trim();
   const p = document.getElementById('login-password').value.trim();
-  if(!u){ showToast('הזן/י שם משתמש'); return; }
-  const acc = accounts[u];
+  if(!uInput){ showToast('הזן/י שם משתמש'); return; }
+  const realUsername = Object.keys(accounts).find(u => u.toLowerCase() === uInput.toLowerCase());
+  const acc = realUsername ? accounts[realUsername] : null;
   if(!acc){ showToast('שם משתמש לא נמצא'); return; }
   if((acc.profile.password||'') !== p){ showToast('סיסמה שגויה 😕'); return; }
-  setActiveStudent(u);
+  setActiveStudent(realUsername);
   saveState();
   showScreen('home');
 }
@@ -1515,12 +1516,14 @@ function connectParent(){
   const validUsernames = [];
   let anyFilled = false;
   rows.forEach((row,i)=>{
-    const u = row.querySelector('input[id^="pl-user-"]').value.trim();
+    const uInput = row.querySelector('input[id^="pl-user-"]').value.trim();
     const p = row.querySelector('input[id^="pl-pass-"]').value.trim();
-    if(!u) return;
+    if(!uInput) return;
     anyFilled = true;
-    const acc = accounts[u];
-    if(acc && (acc.profile.password||'')===p) validUsernames.push(u);
+    // מציאת שם המשתמש המדויק כפי שנשמר, בלי רגישות לאותיות גדולות/קטנות
+    const realUsername = Object.keys(accounts).find(u => u.toLowerCase() === uInput.toLowerCase());
+    const acc = realUsername ? accounts[realUsername] : null;
+    if(acc && (acc.profile.password||'')===p) validUsernames.push(realUsername);
   });
   const err = document.getElementById('parent-login-error');
   if(!anyFilled){ err.textContent='הזן/י לפחות שם משתמש וסיסמה אחד'; err.style.display='block'; return; }
