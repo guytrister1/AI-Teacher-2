@@ -296,6 +296,7 @@ input,select,textarea{font-family:var(--font-b);}
 
   <div id="ob-step1">
     <div class="field"><label>שם פרטי</label><input id="ob-name" placeholder="איך לקרוא לך?"></div>
+    <div class="field"><label>סיסמה</label><input id="ob-password" type="password" placeholder="בחר/י סיסמה"></div>
     <div class="field"><label>גיל</label><input id="ob-age" type="number" placeholder="למשל 12"></div>
     <div class="field"><label>כיתה</label>
       <select id="ob-grade">
@@ -522,11 +523,35 @@ input,select,textarea{font-family:var(--font-b);}
       </select>
     </div>
   </div>
+  <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('edit-profile')">✏️ עריכת פרטים אישיים</button>
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('avatar')">🦊 עריכת אווטאר</button>
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('statistics')">📊 סטטיסטיקות מלאות</button>
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('parent-dash')">👨‍👩‍👧 לוח בקרה להורים</button>
-  <button class="btn btn-ghost btn-block" style="color:var(--coral); margin-bottom:10px;" onclick="resetProgress()">🗑️ איפוס התקדמות</button>
   <button class="btn btn-ghost btn-block" onclick="logout()">🚪 התנתקות</button>
+</section>
+
+<!-- ================= EDIT PROFILE ================= -->
+<section class="screen" id="screen-edit-profile">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>✏️ עריכת פרטים אישיים</h2><div style="width:38px"></div></div>
+  <div class="field"><label>שם פרטי</label><input id="ep-name" placeholder="שם"></div>
+  <div class="field"><label>סיסמה חדשה (השאר ריק אם לא רוצים לשנות)</label><input id="ep-password" type="password" placeholder="סיסמה חדשה"></div>
+  <div class="field"><label>גיל</label><input id="ep-age" type="number" placeholder="גיל"></div>
+  <div class="field"><label>כיתה</label>
+    <select id="ep-grade">
+      <option>גן חובה</option><option>א'</option><option>ב'</option><option>ג'</option><option>ד'</option><option>ה'</option><option>ו'</option>
+      <option>ז'</option><option>ח'</option><option>ט'</option><option>י'</option><option>י"א</option><option>י"ב</option>
+    </select>
+  </div>
+  <div class="field"><label>שפה</label>
+    <select id="ep-lang"><option value="he">עברית</option><option value="en">English</option><option value="ar">العربية</option><option value="ru">Русский</option></select>
+  </div>
+  <div class="field"><label>מדינה</label>
+    <select id="ep-country"><option>ישראל</option><option>ארה"ב</option><option>קנדה</option><option>אחר</option></select>
+  </div>
+  <div class="field"><label>תוכנית לימודים</label>
+    <select id="ep-curriculum"><option>תוכנית משרד החינוך</option><option>בגרויות מוגברות</option><option>לימוד עצמאי / העשרה</option></select>
+  </div>
+  <button class="btn btn-gold btn-block" onclick="saveProfileEdits()">💾 שמור שינויים</button>
 </section>
 
 <!-- ================= STATISTICS ================= -->
@@ -659,7 +684,7 @@ const DAILY_TIPS = [
 let state = null;
 function defaultState(){
   return {
-    profile:{name:'', age:'', grade:'', lang:'he', country:'', curriculum:'', avatar:'🦊', avatarColor:'#2a2f5c'},
+    profile:{name:'', password:'', age:'', grade:'', lang:'he', country:'', curriculum:'', avatar:'🦊', avatarColor:'#2a2f5c'},
     level:1, xp:0, coins:20, streak:0, lastActiveDate:null,
     dailyGoal:30, todayMinutes:0, todayDate:null,
     blockGames:false,
@@ -673,7 +698,7 @@ function defaultState(){
     },
     dailyMissions:null, dailyMissionsDate:null,
     classCode:null, students:[], homework:[],
-    darkMode:true
+    darkMode:true, loggedIn:false
   };
 }
 function loadState(){
@@ -698,6 +723,7 @@ function migrateState(){
   if(!Array.isArray(state.students)) state.students = [];
   if(!Array.isArray(state.homework)) state.homework = [];
   if(!state.profile) state.profile = d.profile;
+  else Object.keys(d.profile).forEach(k=>{ if(state.profile[k]===undefined) state.profile[k] = d.profile[k]; });
   if(!state.stats) state.stats = d.stats;
   if(!state.stats.subjectProgress) state.stats.subjectProgress = {};
   if(!state.stats.dailyMinutes) state.stats.dailyMinutes = {};
@@ -724,6 +750,7 @@ function showScreen(name){
   if(name==='parent-dash') renderParentDash();
   if(name==='teacher-dash') renderTeacherDash();
   if(name==='quiz-setup') renderQuizSetup();
+  if(name==='edit-profile') renderEditProfile();
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -738,11 +765,22 @@ function showToast(msg){
 function fakeLogin(provider){
   showToast('מתחבר עם '+provider+'... ✅');
   setTimeout(()=>{
-    if(state.profile.name){ showScreen('home'); }
-    else { showScreen('onboard'); renderEmojiPicker('ob-emoji-picker','ob-avatar-preview'); }
+    if(state.profile.name){
+      if(state.profile.password){
+        const entered = prompt('שלום '+state.profile.name+'! הזן/י סיסמה כדי להתחבר:');
+        if(entered !== state.profile.password){ showToast('סיסמה שגויה 😕'); return; }
+      }
+      state.loggedIn = true; saveState();
+      showScreen('home');
+    } else {
+      showScreen('onboard'); renderEmojiPicker('ob-emoji-picker','ob-avatar-preview');
+    }
   }, 500);
 }
 function goGuest(){
+  if(state.profile.name){
+    state.loggedIn = true; saveState(); showScreen('home'); return;
+  }
   state.profile.name = 'אורח/ת';
   saveState();
   showScreen('onboard');
@@ -751,6 +789,7 @@ function goGuest(){
 function obNext(step){
   if(step===2){
     state.profile.name = document.getElementById('ob-name').value || 'תלמיד/ה';
+    state.profile.password = document.getElementById('ob-password').value || '';
     state.profile.age = document.getElementById('ob-age').value;
     state.profile.grade = document.getElementById('ob-grade').value;
   }
@@ -775,21 +814,38 @@ function pickEmoji(e, pickerId, previewId){
   document.querySelectorAll('#'+pickerId+' .emoji-opt').forEach(b=>b.classList.toggle('sel', b.textContent===e));
 }
 function finishOnboarding(){
+  state.loggedIn = true;
   saveState();
   showScreen('home');
   showToast('ברוך/ה הבא/ה, '+state.profile.name+'! 🎉');
 }
 function logout(){
-  if(confirm('להתנתק? ההתקדמות תישמר במכשיר זה.')){
-    state = defaultState(); saveState(); showScreen('splash');
+  if(confirm('להתנתק? כל ההתקדמות שלך תישמר במכשיר זה, ותוכל/י להתחבר שוב.')){
+    state.loggedIn = false; saveState(); showScreen('splash');
   }
 }
-function resetProgress(){
-  if(confirm('לאפס את כל ההתקדמות? פעולה זו אינה הפיכה.')){
-    const name=state.profile.name, avatar=state.profile.avatar;
-    state = defaultState(); state.profile.name=name; state.profile.avatar=avatar;
-    saveState(); showScreen('home'); showToast('ההתקדמות אופסה');
-  }
+function renderEditProfile(){
+  const p = state.profile;
+  document.getElementById('ep-name').value = p.name||'';
+  document.getElementById('ep-password').value = '';
+  document.getElementById('ep-age').value = p.age||'';
+  document.getElementById('ep-grade').value = p.grade||"י'";
+  document.getElementById('ep-lang').value = p.lang||'he';
+  document.getElementById('ep-country').value = p.country||'ישראל';
+  document.getElementById('ep-curriculum').value = p.curriculum||'תוכנית משרד החינוך';
+}
+function saveProfileEdits(){
+  state.profile.name = document.getElementById('ep-name').value.trim() || state.profile.name;
+  const newPass = document.getElementById('ep-password').value;
+  if(newPass) state.profile.password = newPass;
+  state.profile.age = document.getElementById('ep-age').value;
+  state.profile.grade = document.getElementById('ep-grade').value;
+  state.profile.lang = document.getElementById('ep-lang').value;
+  state.profile.country = document.getElementById('ep-country').value;
+  state.profile.curriculum = document.getElementById('ep-curriculum').value;
+  saveState();
+  showToast('הפרטים עודכנו ✅');
+  showScreen('settings');
 }
 
 /* =========================================================
@@ -1440,7 +1496,7 @@ function assignHomework(){
 function init(){
   loadState();
   document.body.classList.toggle('light', !state.darkMode);
-  if(state.profile.name){
+  if(state.profile.name && state.loggedIn){
     ensureDailyReset();
     showScreen('home');
   } else {
