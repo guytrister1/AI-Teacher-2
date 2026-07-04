@@ -998,7 +998,7 @@ function openQuizSetupFromTopic(){
 // 2) יש מפתח API אישי שמור ב-localStorage (הגדרות -> מפתח API לבדיקות) -> קריאה ישירה
 //    עם anthropic-dangerous-direct-browser-access. טוב לבדיקות על המחשב שלך בלבד.
 // 3) אחרת -> ניסיון קריאה ישירה בלי מפתח, שיעבוד רק בתוך תצוגת Artifact חיה של Claude.ai
-const WORKER_URL = "https://REPLACE-ME.workers.dev";
+const WORKER_URL = "https://ai-teacher-proxy.ai-teacher1.workers.dev";
 
 async function callClaude(messages, system){
   const body = { model:'claude-sonnet-4-6', max_tokens:1000, messages };
