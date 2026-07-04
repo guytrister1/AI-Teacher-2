@@ -554,7 +554,7 @@ input,select,textarea{font-family:var(--font-b);}
 <!-- ================= EDIT PROFILE ================= -->
 <section class="screen" id="screen-edit-profile">
   <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>✏️ עריכת פרטים אישיים</h2><div style="width:38px"></div></div>
-  <div class="field"><label>שם פרטי</label><input id="ep-name" placeholder="שם"></div>
+  <div class="field"><label>שם משתמש (לא ניתן לשינוי)</label><input id="ep-name" disabled style="opacity:.6;"></div>
   <div class="field"><label>סיסמה חדשה (השאר ריק אם לא רוצים לשנות)</label><input id="ep-password" type="password" placeholder="סיסמה חדשה"></div>
   <div class="field"><label>גיל</label><input id="ep-age" type="number" placeholder="גיל"></div>
   <div class="field"><label>כיתה</label>
@@ -657,6 +657,9 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="navbtn" data-nav="settings" onclick="showScreen('settings')"><span class="ic">⚙️</span>הגדרות</button>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
 /* =========================================================
    DATA
@@ -718,13 +721,46 @@ const DAILY_TIPS = [
 ];
 
 /* =========================================================
-   STATE (multi-account)
+   FIREBASE + STATE
 ========================================================= */
-// כל החשבונות (ילדים) על המכשיר הזה נשמרים במילון אחד לפי שם משתמש.
-// session קובע מי מחובר כרגע: תלמיד בודד, או הורה/מורה שמחובר לכמה ילדים.
-let accounts = {};   // { username: fullAccountState }
-let session = {mode:null, username:null};
-let state = null;    // תמיד מצביע על חשבון הילד הפעיל כרגע (לתלמיד או לצפייה כהורה)
+const firebaseConfig = {
+  apiKey: "AIzaSyBRFdUWhVnwIuypce_UaxGaRC0GF_qOfv8",
+  authDomain: "falling-fcd5e.firebaseapp.com",
+  projectId: "falling-fcd5e",
+  storageBucket: "falling-fcd5e.firebasestorage.app",
+  messagingSenderId: "781272819558",
+  appId: "1:781272819558:web:b86fa44590cf9ad7320aa7"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let state = null;      // חשבון התלמיד/ה הפעיל, נטען מ-Firestore
+let currentUid = null; // ה-UID של המשתמש המחובר ב-Firebase Auth
+let saveTimer = null;
+
+// שם המשתמש אינו אימייל אמיתי, אבל Firebase Auth דורש אימייל. הפתרון:
+// קידוד דטרמיניסטי (base64) של השם ל"אימייל" פנימי. ייחודיות שם המשתמש
+// מובטחת אוטומטית ע"י Firebase (לא ניתן ליצור פעמיים אותו אימייל).
+function usernameToEmail(username){
+  const clean = username.trim().toLowerCase();
+  const b64 = btoa(unescape(encodeURIComponent(clean))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return 'u' + b64 + '@aiteacher-app.internal';
+}
+function authErrorMessage(e){
+  const map = {
+    'auth/user-not-found':'שם משתמש לא נמצא',
+    'auth/wrong-password':'סיסמה שגויה 😕',
+    'auth/invalid-credential':'שם משתמש או סיסמה שגויים',
+    'auth/invalid-login-credentials':'שם משתמש או סיסמה שגויים',
+    'auth/too-many-requests':'יותר מדי ניסיונות, נסה/י שוב בעוד כמה דקות',
+    'auth/network-request-failed':'בעיית רשת — בדוק/י חיבור לאינטרנט',
+    'auth/email-already-in-use':'שם המשתמש הזה כבר תפוס, נסה/י שם אחר',
+    'auth/weak-password':'הסיסמה חייבת להכיל לפחות 6 תווים',
+    'auth/requires-recent-login':'מטעמי אבטחה יש להתחבר מחדש לפני שינוי סיסמה — התנתק/י והתחבר/י שוב, ואז נסה/י לשנות סיסמה'
+  };
+  return map[e.code] || ('שגיאה: ' + e.message);
+}
 
 function defaultState(){
   return {
@@ -745,13 +781,6 @@ function defaultState(){
     darkMode:true
   };
 }
-function loadAccounts(){
-  try{ accounts = JSON.parse(localStorage.getItem('aiTeacherAccounts')||'{}'); }catch(e){ accounts = {}; }
-  if(typeof accounts !== 'object' || accounts===null) accounts = {};
-}
-function loadSession(){
-  try{ session = JSON.parse(localStorage.getItem('aiTeacherSession')||'null') || {mode:null}; }catch(e){ session = {mode:null}; }
-}
 function migrateAccount(acc){
   const d = defaultState();
   Object.keys(d).forEach(k=>{ if(acc[k]===undefined || acc[k]===null) acc[k] = d[k]; });
@@ -768,18 +797,16 @@ function migrateAccount(acc){
   if(!acc.stats.dailyMinutes) acc.stats.dailyMinutes = {};
   return acc;
 }
+// שמירה מבוצעת ל-Firestore, עם דיליי קטן (debounce) כדי לא לשלוח עשרות
+// כתיבות בשנייה כשכמה פעולות קורות ברצף (XP, מטבעות, הישגים וכו').
 function saveState(){
-  // state הוא reference חי בתוך accounts[username] (אין שכפול), אז מספיק לשמור accounts+session
-  localStorage.setItem('aiTeacherAccounts', JSON.stringify(accounts));
-  localStorage.setItem('aiTeacherSession', JSON.stringify(session));
-}
-function usernameTaken(name){
-  return Object.keys(accounts).some(u=>u.toLowerCase()===name.toLowerCase());
-}
-function setActiveStudent(username){
-  session.mode = 'student';
-  session.username = username;
-  state = accounts[username];
+  if(!currentUid || !state) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    db.collection('students').doc(currentUid).set(state).catch(err=>{
+      showToast('⚠️ שמירה נכשלה: ' + err.message);
+    });
+  }, 500);
 }
 
 /* =========================================================
@@ -811,19 +838,20 @@ function showToast(msg){
 }
 
 /* =========================================================
-   AUTH: LOGIN / REGISTER (student accounts)
+   AUTH: LOGIN / REGISTER (Firebase)
 ========================================================= */
-function doLogin(){
+async function doLogin(){
   const uInput = document.getElementById('login-username').value.trim();
   const p = document.getElementById('login-password').value.trim();
   if(!uInput){ showToast('הזן/י שם משתמש'); return; }
-  const realUsername = Object.keys(accounts).find(u => u.toLowerCase() === uInput.toLowerCase());
-  const acc = realUsername ? accounts[realUsername] : null;
-  if(!acc){ showToast('שם משתמש לא נמצא'); return; }
-  if((acc.profile.password||'') !== p){ showToast('סיסמה שגויה 😕'); return; }
-  setActiveStudent(realUsername);
-  saveState();
-  showScreen('home');
+  if(!p){ showToast('הזן/י סיסמה'); return; }
+  showToast('מתחבר/ת...');
+  try{
+    await auth.signInWithEmailAndPassword(usernameToEmail(uInput), p);
+    // onAuthStateChanged יטען את הנתונים ויעביר למסך הבית
+  }catch(e){
+    showToast(authErrorMessage(e));
+  }
 }
 function startRegister(){
   showScreen('onboard');
@@ -841,13 +869,14 @@ function startRegister(){
 function obNext(step){
   if(step===2){
     const name = document.getElementById('ob-name').value.trim();
+    const pass = document.getElementById('ob-password').value.trim();
     const err = document.getElementById('ob-error');
     if(!name){ err.textContent='חובה לבחור שם משתמש'; err.style.display='block'; return; }
-    if(usernameTaken(name)){ err.textContent='שם המשתמש הזה כבר תפוס, נסה/י שם אחר'; err.style.display='block'; return; }
+    if(pass.length < 6){ err.textContent='הסיסמה חייבת להכיל לפחות 6 תווים'; err.style.display='block'; return; }
     err.style.display='none';
     window._newProfile = window._newProfile || {};
     window._newProfile.name = name;
-    window._newProfile.password = document.getElementById('ob-password').value.trim() || '';
+    window._newProfile.password = pass;
     window._newProfile.age = document.getElementById('ob-age').value;
     window._newProfile.grade = document.getElementById('ob-grade').value;
   }
@@ -874,22 +903,24 @@ function pickEmoji(e, pickerId, previewId){
   document.getElementById(previewId).textContent = e;
   document.querySelectorAll('#'+pickerId+' .emoji-opt').forEach(b=>b.classList.toggle('sel', b.textContent===e));
 }
-function finishOnboarding(){
+async function finishOnboarding(){
   const p = window._newProfile;
-  const acc = defaultState();
-  Object.assign(acc.profile, p);
-  accounts[p.name] = acc;
-  setActiveStudent(p.name);
-  saveState();
-  showScreen('home');
-  showToast('ברוך/ה הבא/ה, '+p.name+'! 🎉');
-  window._newProfile = null;
+  if(!p.password || p.password.length < 6){ showToast('הסיסמה חייבת להכיל לפחות 6 תווים'); return; }
+  showToast('יוצר/ת חשבון...');
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(usernameToEmail(p.name), p.password);
+    const acc = defaultState();
+    Object.assign(acc.profile, p);
+    await db.collection('students').doc(cred.user.uid).set(acc);
+    // onAuthStateChanged יטען את הנתונים ויעביר למסך הבית
+    window._newProfile = null;
+  }catch(e){
+    showToast(authErrorMessage(e));
+  }
 }
 function logout(){
-  if(confirm('להתנתק? כל ההתקדמות שלך תישמר במכשיר זה, ותוכל/י להתחבר שוב.')){
-    session = {mode:null, username:null};
-    saveState();
-    showScreen('splash');
+  if(confirm('להתנתק? כל ההתקדמות שלך נשמרת בענן, ותוכל/י להתחבר שוב מכל מכשיר.')){
+    auth.signOut();
   }
 }
 function renderEditProfile(){
@@ -903,18 +934,18 @@ function renderEditProfile(){
   document.getElementById('ep-curriculum').value = p.curriculum||'תוכנית משרד החינוך';
   document.getElementById('ep-parentcode').value = '';
 }
-function saveProfileEdits(){
-  const newName = document.getElementById('ep-name').value.trim() || state.profile.name;
-  const oldName = state.profile.name;
-  if(newName !== oldName){
-    if(usernameTaken(newName)){ showToast('שם המשתמש הזה כבר תפוס'); return; }
-    delete accounts[oldName];
-    state.profile.name = newName;
-    accounts[newName] = state;
-    if(session.username===oldName) session.username = newName;
-  }
+async function saveProfileEdits(){
   const newPass = document.getElementById('ep-password').value.trim();
-  if(newPass) state.profile.password = newPass;
+  if(newPass){
+    if(newPass.length < 6){ showToast('הסיסמה החדשה חייבת להכיל לפחות 6 תווים'); return; }
+    try{
+      await auth.currentUser.updatePassword(newPass);
+      state.profile.password = newPass;
+    }catch(e){
+      showToast('לא ניתן לעדכן סיסמה: ' + authErrorMessage(e) + ' (יתכן שצריך להתחבר מחדש)');
+      return;
+    }
+  }
   const newCode = document.getElementById('ep-parentcode').value.trim().slice(0,4);
   if(newCode) state.profile.parentCode = newCode;
   state.profile.age = document.getElementById('ep-age').value;
@@ -1626,7 +1657,7 @@ function renderStatistics(){
 }
 
 /* =========================================================
-   PARENT / TEACHER LOGIN (connect to existing child accounts)
+   PARENT ACCESS (PIN-gated, single account)
 ========================================================= */
 function requestParentAccess(){
   const code = state.profile.parentCode;
@@ -1700,24 +1731,35 @@ function assignHomework(){
 /* =========================================================
    INIT
 ========================================================= */
-function init(){
-  loadAccounts();
-  loadSession();
-  // ניקוי הגנתי: אם session מצביע על username שכבר לא קיים ב-accounts (נמחק/שם שונה), מתאפס
-  if(session.mode==='student' && !accounts[session.username]) session = {mode:null, username:null};
-  Object.keys(accounts).forEach(u=> migrateAccount(accounts[u]));
-
-  if(session.mode==='student'){
-    state = accounts[session.username];
-    document.body.classList.toggle('light', !state.darkMode);
-    ensureDailyReset();
-    showScreen('home');
+auth.onAuthStateChanged(async (user)=>{
+  if(user){
+    currentUid = user.uid;
+    try{
+      let docSnap = await db.collection('students').doc(user.uid).get();
+      if(!docSnap.exists){
+        // מקרה קצה: יתכן שהמסמך עדיין בדרך (רגע אחרי הרשמה), מנסים שוב פעם אחת
+        await new Promise(r=>setTimeout(r, 800));
+        docSnap = await db.collection('students').doc(user.uid).get();
+      }
+      if(docSnap.exists){
+        state = migrateAccount(docSnap.data());
+      } else {
+        state = defaultState();
+        await db.collection('students').doc(user.uid).set(state);
+      }
+      document.body.classList.toggle('light', !state.darkMode);
+      ensureDailyReset();
+      showScreen('home');
+    }catch(e){
+      showToast('שגיאה בטעינת הנתונים: ' + e.message);
+      showScreen('splash');
+    }
   } else {
+    currentUid = null;
+    state = null;
     showScreen('splash');
   }
-  saveState();
-}
-init();
+});
 </script>
 </body>
 </html>
