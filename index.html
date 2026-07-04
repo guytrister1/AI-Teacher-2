@@ -510,19 +510,6 @@ input,select,textarea{font-family:var(--font-b);}
 <section class="screen" id="screen-settings">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>⚙️ הגדרות</h2><div style="width:38px"></div></div>
   <div class="card" style="margin-bottom:12px;">
-    <div style="font-size:13px; font-weight:700; margin-bottom:8px;">🔑 מפתח API אישי (לבדיקות בלבד)</div>
-    <p style="font-size:11.5px; color:var(--text-dim); margin-bottom:10px;">
-      נשמר רק בדפדפן הזה, לא בקוד ולא באתר. נדרש כדי שה-AI יעבוד כשפותחים
-      את הקובץ מחוץ ל-Claude.ai (לפני שמגדירים Worker). קבל מפתח ב-console.anthropic.com.
-    </p>
-    <input id="api-key-input" type="password" placeholder="sk-ant-..." style="width:100%; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); margin-bottom:10px;">
-    <div class="grid2">
-      <button class="btn btn-teal" onclick="saveApiKey()">שמור מפתח</button>
-      <button class="btn btn-ghost" onclick="clearApiKey()">מחק מפתח</button>
-    </div>
-    <div id="api-key-status" style="font-size:11.5px; color:var(--text-dim); margin-top:8px;"></div>
-  </div>
-  <div class="card" style="margin-bottom:12px;">
     <div class="stat-block"><span>מצב כהה</span><button class="toggle on" id="dark-toggle" onclick="toggleDark()"></button></div>
     <div class="stat-block"><span>שפה</span>
       <select id="settings-lang" onchange="changeLang(this.value)" style="background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 10px;">
@@ -737,7 +724,6 @@ function showScreen(name){
   if(name==='parent-dash') renderParentDash();
   if(name==='teacher-dash') renderTeacherDash();
   if(name==='quiz-setup') renderQuizSetup();
-  if(name==='settings') renderApiKeyStatus();
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -993,35 +979,21 @@ function openQuizSetupFromTopic(){
 /* =========================================================
    AI API HELPERS
 ========================================================= */
-// שלוש דרכים אפשריות לקרוא ל-AI, לפי סדר עדיפות:
-// 1) WORKER_URL מוגדר (לא REPLACE-ME) -> קורא לפרוקסי שלך (הכי בטוח, לפריסה אמיתית)
-// 2) יש מפתח API אישי שמור ב-localStorage (הגדרות -> מפתח API לבדיקות) -> קריאה ישירה
-//    עם anthropic-dangerous-direct-browser-access. טוב לבדיקות על המחשב שלך בלבד.
-// 3) אחרת -> ניסיון קריאה ישירה בלי מפתח, שיעבוד רק בתוך תצוגת Artifact חיה של Claude.ai
+// כל קריאות ה-AI עוברות דרך ה-Cloudflare Worker שמחזיק את מפתח ה-API
+// בבטחה בצד השרת. ראה worker/README.md לפרטי הפריסה.
 const WORKER_URL = "https://ai-teacher-proxy.ai-teacher1.workers.dev";
 
 async function callClaude(messages, system){
   const body = { model:'claude-sonnet-4-6', max_tokens:1000, messages };
   if(system) body.system = system;
 
-  const useWorker = WORKER_URL && !WORKER_URL.includes('REPLACE-ME');
-  const userKey = localStorage.getItem('aiTeacherApiKey');
-  const endpoint = useWorker ? WORKER_URL : 'https://api.anthropic.com/v1/messages';
-  const headers = {'Content-Type':'application/json'};
-  if(!useWorker && userKey){
-    headers['x-api-key'] = userKey;
-    headers['anthropic-version'] = '2023-06-01';
-    headers['anthropic-dangerous-direct-browser-access'] = 'true';
-  }
-
   let resp;
   try{
-    resp = await fetch(endpoint, { method:'POST', headers, body:JSON.stringify(body) });
+    resp = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
   }catch(networkErr){
-    if(!useWorker && !userKey){
-      throw new Error('אין חיבור ל-AI: זה קובץ מקומי בלי פרוקסי ובלי מפתח API. הוסף מפתח בהגדרות (לבדיקות) או הגדר Worker.');
-    }
-    throw new Error('כשל בחיבור לשרת ה-AI (בדוק אינטרנט / מפתח / CORS).');
+    throw new Error('כשל בחיבור לשרת ה-AI (בדוק אינטרנט / חיבור ל-Worker).');
   }
   let data;
   try{ data = await resp.json(); }catch(e){ throw new Error('תגובה לא תקינה מהשרת (סטטוס '+resp.status+').'); }
@@ -1371,24 +1343,6 @@ function toggleDark(){
   saveState();
 }
 function changeLang(l){ state.profile.lang = l; saveState(); showToast(l==='he'?'עברית נבחרה':'English selected'); }
-function saveApiKey(){
-  const v = document.getElementById('api-key-input').value.trim();
-  if(!v){ showToast('הדבק מפתח קודם'); return; }
-  localStorage.setItem('aiTeacherApiKey', v);
-  document.getElementById('api-key-input').value = '';
-  renderApiKeyStatus();
-  showToast('המפתח נשמר בדפדפן הזה ✅');
-}
-function clearApiKey(){
-  localStorage.removeItem('aiTeacherApiKey');
-  renderApiKeyStatus();
-  showToast('המפתח נמחק');
-}
-function renderApiKeyStatus(){
-  const has = !!localStorage.getItem('aiTeacherApiKey');
-  const el = document.getElementById('api-key-status');
-  if(el) el.textContent = has ? '✅ מפתח שמור במכשיר זה' : '⚠️ אין מפתח שמור — ה-AI לא יעבוד מחוץ ל-Claude.ai';
-}
 function setDailyGoal(v){
   state.dailyGoal = parseInt(v);
   document.getElementById('settings-goal') && (document.getElementById('settings-goal').value = v);
