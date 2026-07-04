@@ -1143,6 +1143,27 @@ function extractJSON(text){
   const start = clean.indexOf('{'); const end = clean.lastIndexOf('}');
   return JSON.parse(clean.slice(start, end+1));
 }
+// הנחיה משותפת: האפליקציה מציגה טקסט רגיל בלבד, בלי רינדור LaTeX/Markdown.
+// בלי זה ה-AI לפעמים כותב \frac{3}{4}, $x^2$ וכו' וזה יוצא כטקסט גולמי מוזר.
+const NO_LATEX_RULE = ' חשוב מאוד: אל תשתמש בסימוני LaTeX (כמו \\frac, \\times, $...$, \\sqrt) ואל תשתמש בכוכביות של Markdown להדגשה. כתוב מתמטיקה בטקסט רגיל וברור בלבד, למשל: "3/4" במקום \\frac{3}{4}, "x בריבוע" או "x^2" במקום $x^2$, "כפול" או "x" במקום \\times.';
+// רשת ביטחון: גם אם ה-AI בכל זאת כותב LaTeX/Markdown, מנקים לפני התצוגה.
+function sanitizeAIText(t){
+  if(!t) return t;
+  return t
+    .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '$1/$2')
+    .replace(/\\sqrt\{([^{}]*)\}/g, '√($1)')
+    .replace(/\\times/g, '×')
+    .replace(/\\cdot/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\le/g, '≤')
+    .replace(/\\ge/g, '≥')
+    .replace(/\\ne/g, '≠')
+    .replace(/\\pi/g, 'π')
+    .replace(/\\\(/g,'').replace(/\\\)/g,'')
+    .replace(/\\\[/g,'').replace(/\\\]/g,'')
+    .replace(/\$\$?/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1');
+}
 
 /* =========================================================
    WHITEBOARD
@@ -1213,8 +1234,8 @@ async function sendWhiteboardToAI(){
         {type:'image', source:{type:'base64', media_type:'image/png', data: base64}},
         {type:'text', text: promptText}
       ]
-    }]);
-    resp.textContent = text || 'לא התקבלה תשובה, נסה/י שוב.';
+    }], 'ענה בעברית, בקצרה וברור.' + NO_LATEX_RULE);
+    resp.textContent = sanitizeAIText(text) || 'לא התקבלה תשובה, נסה/י שוב.';
   }catch(e){
     resp.textContent = '⚠️ ' + e.message;
   }
@@ -1236,7 +1257,7 @@ function pushMsg(role, text){
   const log = document.getElementById('chat-log');
   const div = document.createElement('div');
   div.className = 'msg '+(role==='ai'?'ai':'user');
-  div.textContent = text;
+  div.textContent = sanitizeAIText(text);
   log.appendChild(div);
   if(role==='ai'){
     const wbBtn = document.createElement('button');
@@ -1264,7 +1285,7 @@ async function sendChat(){
   log.appendChild(typing); log.scrollTop = log.scrollHeight;
   try{
     const apiMsgs = chatHistory.slice(-10).map(m=>({role: m.role==='ai'?'assistant':'user', content:m.text}));
-    const sys = 'אתה מורה פרטי סבלני ומעודד לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'. ענה בעברית פשוטה וברורה, בקצרה יחסית (עד כמה פסקאות), עם דוגמאות כשמתאים. אם המשתמש מבקש הסבר לילד קטן - השתמש באנלוגיות פשוטות מהחיים. היה חם ומעודד.';
+    const sys = 'אתה מורה פרטי סבלני ומעודד לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'. ענה בעברית פשוטה וברורה, בקצרה יחסית (עד כמה פסקאות), עם דוגמאות כשמתאים. אם המשתמש מבקש הסבר לילד קטן - השתמש באנלוגיות פשוטות מהחיים. היה חם ומעודד.' + NO_LATEX_RULE;
     const reply = await callClaude(apiMsgs, sys);
     typing.remove();
     pushMsg('ai', reply || 'סליחה, לא הצלחתי לענות כרגע. נסה/י שוב.');
@@ -1300,10 +1321,14 @@ async function loadPracticeQuestion(){
   }
 }
 async function generateQuestion(subject, topic, difficulty){
-  const sys = 'אתה מחולל שאלות לימודיות. החזר אך ורק אובייקט JSON תקני (ללא טקסט נוסף, ללא Markdown) במבנה: {"question":"טקסט השאלה בעברית","type":"multiple_choice או true_false","options":["אפשרות1","אפשרות2","אפשרות3","אפשרות4"],"correctIndex":0,"explanation":"הסבר קצר בעברית מדוע זו התשובה הנכונה"}. עבור true_false האפשרויות יהיו בדיוק ["נכון","לא נכון"].';
+  const sys = 'אתה מחולל שאלות לימודיות. החזר אך ורק אובייקט JSON תקני (ללא טקסט נוסף, ללא Markdown) במבנה: {"question":"טקסט השאלה בעברית","type":"multiple_choice או true_false","options":["אפשרות1","אפשרות2","אפשרות3","אפשרות4"],"correctIndex":0,"explanation":"הסבר קצר בעברית מדוע זו התשובה הנכונה"}. עבור true_false האפשרויות יהיו בדיוק ["נכון","לא נכון"].' + NO_LATEX_RULE;
   const userMsg = 'צור שאלה במקצוע: '+subject+', נושא: '+topic+', רמת קושי: '+difficulty+'. חשוב: JSON בלבד.';
   const text = await callClaude([{role:'user', content:userMsg}], sys);
-  return extractJSON(text);
+  const q = extractJSON(text);
+  q.question = sanitizeAIText(q.question);
+  q.options = q.options.map(sanitizeAIText);
+  q.explanation = sanitizeAIText(q.explanation);
+  return q;
 }
 function renderQuestion(container, q, isQuiz, meta){
   container.innerHTML = `
