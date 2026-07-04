@@ -792,7 +792,7 @@ function showToast(msg){
 ========================================================= */
 function doLogin(){
   const u = document.getElementById('login-username').value.trim();
-  const p = document.getElementById('login-password').value;
+  const p = document.getElementById('login-password').value.trim();
   if(!u){ showToast('הזן/י שם משתמש'); return; }
   const acc = accounts[u];
   if(!acc){ showToast('שם משתמש לא נמצא'); return; }
@@ -823,7 +823,7 @@ function obNext(step){
     err.style.display='none';
     window._newProfile = window._newProfile || {};
     window._newProfile.name = name;
-    window._newProfile.password = document.getElementById('ob-password').value || '';
+    window._newProfile.password = document.getElementById('ob-password').value.trim() || '';
     window._newProfile.age = document.getElementById('ob-age').value;
     window._newProfile.grade = document.getElementById('ob-grade').value;
   }
@@ -890,7 +890,7 @@ function saveProfileEdits(){
     const idx = session.parentChildren.indexOf(oldName);
     if(idx>-1) session.parentChildren[idx] = newName;
   }
-  const newPass = document.getElementById('ep-password').value;
+  const newPass = document.getElementById('ep-password').value.trim();
   if(newPass) state.profile.password = newPass;
   state.profile.age = document.getElementById('ep-age').value;
   state.profile.grade = document.getElementById('ep-grade').value;
@@ -1516,7 +1516,7 @@ function connectParent(){
   let anyFilled = false;
   rows.forEach((row,i)=>{
     const u = row.querySelector('input[id^="pl-user-"]').value.trim();
-    const p = row.querySelector('input[id^="pl-pass-"]').value;
+    const p = row.querySelector('input[id^="pl-pass-"]').value.trim();
     if(!u) return;
     anyFilled = true;
     const acc = accounts[u];
