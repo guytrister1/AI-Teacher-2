@@ -268,6 +268,27 @@ input,select,textarea{font-family:var(--font-b);}
 #toast.show{transform:translateX(-50%) translateY(0);}
 
 ::-webkit-scrollbar{width:0; height:0;}
+
+/* ---------- whiteboard ---------- */
+.wb-modal{
+  position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center; padding:14px;
+}
+.wb-modal.hidden{display:none;}
+.wb-panel{
+  width:100%; max-width:500px; max-height:92vh; background:var(--bg2); border-radius:20px;
+  border:1px solid var(--line); box-shadow:var(--shadow); display:flex; flex-direction:column; overflow:hidden;
+}
+.wb-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line);}
+.wb-header b{font-size:14px;}
+.wb-close-btn{width:32px; height:32px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:16px;}
+.wb-canvas-wrap{background:#fdfaf2; margin:12px; border-radius:14px; overflow:hidden; border:1px solid var(--line); touch-action:none;}
+#wb-canvas{display:block; width:100%; height:320px;}
+.wb-toolbar{display:flex; gap:8px; padding:0 12px 12px;}
+.wb-toolbar button{flex:1; padding:10px; border-radius:12px; font-size:12.5px; font-weight:700;}
+.wb-response{margin:0 12px 12px; padding:12px; border-radius:12px; background:var(--panel2); border-inline-start:3px solid var(--teal); font-size:13px; line-height:1.6; max-height:160px; overflow-y:auto; display:none;}
+.wb-response.show{display:block;}
+.wb-under-btn{background:none; border:none; color:var(--teal); font-size:12px; font-weight:700; padding:6px 2px 2px; display:flex; align-items:center; gap:4px; cursor:pointer;}
 </style>
 </head>
 <body>
@@ -612,6 +633,20 @@ input,select,textarea{font-family:var(--font-b);}
 </section>
 
 </div><!-- /.app -->
+
+<!-- ================= WHITEBOARD MODAL ================= -->
+<div class="wb-modal hidden" id="wb-modal">
+  <div class="wb-panel">
+    <div class="wb-header"><b>📝 לוח כתיבה</b><button class="wb-close-btn" onclick="closeWhiteboard()">✕</button></div>
+    <div class="wb-canvas-wrap"><canvas id="wb-canvas"></canvas></div>
+    <div class="wb-response" id="wb-response"></div>
+    <div class="wb-toolbar">
+      <button class="btn btn-ghost" onclick="clearWhiteboard()">🗑️ נקה</button>
+      <button class="btn btn-gold" onclick="sendWhiteboardToAI()">🤖 שלח ל-AI</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ================= BOTTOM NAV ================= -->
 <div class="bottomnav" id="bottomnav">
@@ -1110,6 +1145,82 @@ function extractJSON(text){
 }
 
 /* =========================================================
+   WHITEBOARD
+========================================================= */
+let wbCtx = null, wbDrawing = false, wbLastX = 0, wbLastY = 0, wbContext = '';
+function openWhiteboard(contextText){
+  wbContext = contextText || '';
+  document.getElementById('wb-modal').classList.remove('hidden');
+  const resp = document.getElementById('wb-response');
+  resp.classList.remove('show'); resp.textContent = '';
+  const canvas = document.getElementById('wb-canvas');
+  const wrap = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const w = wrap.clientWidth, h = 320;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.width = w+'px'; canvas.style.height = h+'px';
+  wbCtx = canvas.getContext('2d');
+  wbCtx.scale(dpr,dpr);
+  wbCtx.fillStyle = '#fdfaf2';
+  wbCtx.fillRect(0,0,w,h);
+  wbCtx.strokeStyle = '#1c1c2e';
+  wbCtx.lineWidth = 3;
+  wbCtx.lineCap = 'round';
+  wbCtx.lineJoin = 'round';
+
+  canvas.onpointerdown = (e)=>{
+    wbDrawing = true;
+    const r = canvas.getBoundingClientRect();
+    wbLastX = e.clientX - r.left; wbLastY = e.clientY - r.top;
+  };
+  canvas.onpointermove = (e)=>{
+    if(!wbDrawing) return;
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    wbCtx.beginPath();
+    wbCtx.moveTo(wbLastX, wbLastY);
+    wbCtx.lineTo(x, y);
+    wbCtx.stroke();
+    wbLastX = x; wbLastY = y;
+  };
+  canvas.onpointerup = ()=> wbDrawing = false;
+  canvas.onpointerleave = ()=> wbDrawing = false;
+}
+function clearWhiteboard(){
+  const canvas = document.getElementById('wb-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width/dpr, h = canvas.height/dpr;
+  wbCtx.fillStyle = '#fdfaf2';
+  wbCtx.fillRect(0,0,w,h);
+  document.getElementById('wb-response').classList.remove('show');
+}
+function closeWhiteboard(){
+  document.getElementById('wb-modal').classList.add('hidden');
+}
+async function sendWhiteboardToAI(){
+  const canvas = document.getElementById('wb-canvas');
+  const base64 = canvas.toDataURL('image/png').split(',')[1];
+  const resp = document.getElementById('wb-response');
+  resp.classList.add('show');
+  resp.innerHTML = `<div class="loader" style="padding:10px 0;"><div class="spin-ic"></div>ה-AI בודק את הפתרון...</div>`;
+  const promptText = wbContext
+    ? `זו עבודה בכתב יד של תלמיד/ה על השאלה/נושא הבא: "${wbContext}". תבדוק/י את הדרך והפתרון בתמונה, ותסביר/י בקצרה בעברית אם זה נכון, ואם לא — איפה הטעות ומה לתקן.`
+    : `זו עבודה בכתב יד של תלמיד/ה. תסביר/י בקצרה בעברית מה כתוב שם ואם יש טעויות בדרך הפתרון.`;
+  try{
+    const text = await callClaude([{
+      role:'user',
+      content:[
+        {type:'image', source:{type:'base64', media_type:'image/png', data: base64}},
+        {type:'text', text: promptText}
+      ]
+    }]);
+    resp.textContent = text || 'לא התקבלה תשובה, נסה/י שוב.';
+  }catch(e){
+    resp.textContent = '⚠️ ' + e.message;
+  }
+}
+
+/* =========================================================
    AI CHAT
 ========================================================= */
 let chatHistory = [];
@@ -1127,6 +1238,13 @@ function pushMsg(role, text){
   div.className = 'msg '+(role==='ai'?'ai':'user');
   div.textContent = text;
   log.appendChild(div);
+  if(role==='ai'){
+    const wbBtn = document.createElement('button');
+    wbBtn.className = 'wb-under-btn';
+    wbBtn.innerHTML = '📝 לוח כתיבה';
+    wbBtn.onclick = ()=> openWhiteboard(text);
+    log.appendChild(wbBtn);
+  }
   log.scrollTop = log.scrollHeight;
   window.scrollTo(0, document.body.scrollHeight);
 }
@@ -1196,9 +1314,12 @@ function renderQuestion(container, q, isQuiz, meta){
         ${q.options.map((o,i)=>`<button class="opt-btn" data-i="${i}" onclick="selectAnswer(${i}, ${isQuiz})">${o}</button>`).join('')}
       </div>
       <div class="explain-box" id="explain-box">${q.explanation||''}</div>
+      <button class="wb-under-btn" id="q-wb-btn">📝 לוח כתיבה</button>
     </div>
     ${!isQuiz? `<button class="btn btn-teal btn-block hidden" id="next-q-btn" onclick="loadPracticeQuestion()">שאלה הבאה ➡️</button>`:''}
   `;
+  const wbBtn = document.getElementById('q-wb-btn');
+  if(wbBtn) wbBtn.onclick = ()=> openWhiteboard(q.question);
 }
 function selectAnswer(i, isQuiz){
   if(isQuiz) return selectQuizAnswer(i);
