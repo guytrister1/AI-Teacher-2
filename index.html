@@ -280,22 +280,28 @@ input,select,textarea{font-family:var(--font-b);}
   <h1>המורה החכם</h1>
   <p class="tag">SmartLearn AI — מורה פרטי אישי, זמין 24 שעות ביממה</p>
   <div class="auth-stack">
-    <button class="btn auth-btn btn-block" onclick="fakeLogin('Google')">🔵 המשך עם Google</button>
-    <button class="btn auth-btn btn-block" onclick="fakeLogin('Apple')">🍎 המשך עם Apple</button>
-    <button class="btn auth-btn btn-block" onclick="fakeLogin('Microsoft')">🟦 המשך עם Microsoft</button>
-    <button class="btn auth-btn btn-block" onclick="fakeLogin('אימייל')">✉️ המשך עם אימייל</button>
+    <button class="btn btn-gold btn-block" onclick="showScreen('login')">🔑 התחברות</button>
+    <button class="btn btn-teal btn-block" onclick="startRegister()">📝 הרשמה</button>
   </div>
-  <button class="btn btn-ghost btn-block" onclick="goGuest()">👤 המשך כאורח</button>
-  <button class="pill" style="margin-top:18px;" onclick="showScreen('parent-login')">🧑‍🏫 כניסת הורים / מורים</button>
+  <button class="pill" style="margin-top:18px;" onclick="showScreen('parent-login')">👨‍👩‍👧 כניסת הורים / מורים</button>
 </section>
 
-<!-- ================= ONBOARDING ================= -->
+<!-- ================= LOGIN ================= -->
+<section class="screen" id="screen-login">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>🔑 התחברות</h2><div style="width:38px"></div></div>
+  <div class="field"><label>שם משתמש</label><input id="login-username" placeholder="שם המשתמש שלך"></div>
+  <div class="field"><label>סיסמה</label><input id="login-password" type="password" placeholder="סיסמה" onkeydown="if(event.key==='Enter')doLogin()"></div>
+  <button class="btn btn-gold btn-block" onclick="doLogin()">התחבר/י</button>
+  <p style="text-align:center; font-size:12.5px; color:var(--text-dim); margin-top:16px;">אין לך חשבון? <a href="#" onclick="startRegister(); return false;" style="color:var(--teal); font-weight:700;">הרשם/י כאן</a></p>
+</section>
+
+<!-- ================= ONBOARDING / REGISTER ================= -->
 <section class="screen" id="screen-onboard">
-  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>הרשמה מהירה</h2><div style="width:38px"></div></div>
+  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>הרשמה</h2><div style="width:38px"></div></div>
   <div class="step-dots"><span id="dot1" class="on"></span><span id="dot2"></span><span id="dot3"></span></div>
 
   <div id="ob-step1">
-    <div class="field"><label>שם פרטי</label><input id="ob-name" placeholder="איך לקרוא לך?"></div>
+    <div class="field"><label>שם משתמש</label><input id="ob-name" placeholder="שם ייחודי להתחברות"></div>
     <div class="field"><label>סיסמה</label><input id="ob-password" type="password" placeholder="בחר/י סיסמה"></div>
     <div class="field"><label>גיל</label><input id="ob-age" type="number" placeholder="למשל 12"></div>
     <div class="field"><label>כיתה</label>
@@ -304,6 +310,7 @@ input,select,textarea{font-family:var(--font-b);}
         <option>ז'</option><option>ח'</option><option>ט'</option><option selected>י'</option><option>י"א</option><option>י"ב</option>
       </select>
     </div>
+    <div id="ob-error" style="color:var(--coral); font-size:12.5px; margin-bottom:10px; display:none;"></div>
     <button class="btn btn-gold btn-block" onclick="obNext(2)">המשך</button>
   </div>
 
@@ -328,16 +335,16 @@ input,select,textarea{font-family:var(--font-b);}
   </div>
 </section>
 
-<!-- ================= PARENT LOGIN (simple) ================= -->
+<!-- ================= PARENT / TEACHER LOGIN ================= -->
 <section class="screen" id="screen-parent-login">
-  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>כניסת הורים / מורים</h2><div style="width:38px"></div></div>
-  <div class="card">
-    <p style="font-size:13px; color:var(--text-dim); margin-bottom:14px;">מצב תצוגה בלבד (הדגמה) — צופה בנתוני הלמידה המקומיים של המכשיר.</p>
-    <button class="btn btn-gold btn-block" onclick="showScreen('parent-dash')">🧑‍👩‍👧 לוח בקרה להורים</button>
-    <div style="height:10px"></div>
-    <button class="btn btn-teal btn-block" onclick="showScreen('teacher-dash')">🧑‍🏫 אזור מורים</button>
-  </div>
+  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>👨‍👩‍👧 כניסת הורים / מורים</h2><div style="width:38px"></div></div>
+  <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:14px;">הזן/י שם משתמש וסיסמה של כל ילד/ה שברצונך להתחבר אליו/ה. אפשר להוסיף כמה ילדים.</p>
+  <div id="parent-login-rows"></div>
+  <button class="btn btn-ghost btn-block" style="margin-bottom:14px;" onclick="addParentLoginRow()">➕ הוסף ילד/ה</button>
+  <div id="parent-login-error" style="color:var(--coral); font-size:12.5px; margin-bottom:10px; display:none;"></div>
+  <button class="btn btn-gold btn-block" onclick="connectParent()">התחבר</button>
 </section>
+
 
 <!-- ================= HOME ================= -->
 <section class="screen" id="screen-home">
@@ -526,7 +533,7 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('edit-profile')">✏️ עריכת פרטים אישיים</button>
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('avatar')">🦊 עריכת אווטאר</button>
   <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('statistics')">📊 סטטיסטיקות מלאות</button>
-  <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('parent-dash')">👨‍👩‍👧 לוח בקרה להורים</button>
+  <button class="btn btn-block hidden" id="back-to-parent-btn" style="margin-bottom:10px;" onclick="exitParentMode()">🔙 חזרה למצב הורה</button>
   <button class="btn btn-ghost btn-block" onclick="logout()">🚪 התנתקות</button>
 </section>
 
@@ -566,7 +573,9 @@ input,select,textarea{font-family:var(--font-b);}
 
 <!-- ================= PARENT DASHBOARD ================= -->
 <section class="screen" id="screen-parent-dash">
-  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>👨‍👩‍👧 לוח בקרה להורים</h2><div style="width:38px"></div></div>
+  <div class="topbar"><button class="back-btn" onclick="exitParentMode()">→</button><h2>👨‍👩‍👧 לוח בקרה להורים</h2><div style="width:38px"></div></div>
+  <div class="diff-tabs" id="pd-child-tabs"></div>
+  <button class="btn btn-teal btn-block" style="margin-bottom:16px;" onclick="enterAsChild()">🔓 היכנס/י לחשבון של <span id="pd-enter-name"></span></button>
   <div class="card" style="margin-bottom:14px;">
     <div class="stat-block"><span>זמן למידה היום</span><b id="pd-today">0 דק'</b></div>
     <div class="stat-block"><span>רצף ימים</span><b id="pd-streak">0</b></div>
@@ -589,11 +598,12 @@ input,select,textarea{font-family:var(--font-b);}
     <input id="pd-msg" placeholder="כתוב הודעה מעודדת..." style="width:100%; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); margin-bottom:10px;">
     <button class="btn btn-teal btn-block" onclick="sendParentMessage()">שלח הודעה</button>
   </div>
+  <button class="btn btn-ghost btn-block" style="margin-bottom:14px;" onclick="showScreen('teacher-dash')">🧑‍🏫 אזור מורים (ניהול כיתה)</button>
 </section>
 
 <!-- ================= TEACHER DASHBOARD ================= -->
 <section class="screen" id="screen-teacher-dash">
-  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🧑‍🏫 אזור מורים</h2><div style="width:38px"></div></div>
+  <div class="topbar"><button class="back-btn" onclick="showScreen('parent-dash')">→</button><h2>🧑‍🏫 אזור מורים</h2><div style="width:38px"></div></div>
   <div class="card" style="margin-bottom:14px;">
     <div class="stat-block"><span>קוד כיתה</span><b id="class-code">—</b></div>
     <button class="btn btn-gold btn-block" onclick="generateClassCode()">➕ צור כיתה חדשה</button>
@@ -679,9 +689,14 @@ const DAILY_TIPS = [
 ];
 
 /* =========================================================
-   STATE
+   STATE (multi-account)
 ========================================================= */
-let state = null;
+// כל החשבונות (ילדים) על המכשיר הזה נשמרים במילון אחד לפי שם משתמש.
+// session קובע מי מחובר כרגע: תלמיד בודד, או הורה/מורה שמחובר לכמה ילדים.
+let accounts = {};   // { username: fullAccountState }
+let session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
+let state = null;    // תמיד מצביע על חשבון הילד הפעיל כרגע (לתלמיד או לצפייה כהורה)
+
 function defaultState(){
   return {
     profile:{name:'', password:'', age:'', grade:'', lang:'he', country:'', curriculum:'', avatar:'🦊', avatarColor:'#2a2f5c'},
@@ -698,38 +713,46 @@ function defaultState(){
     },
     dailyMissions:null, dailyMissionsDate:null,
     classCode:null, students:[], homework:[],
-    darkMode:true, loggedIn:false
+    darkMode:true
   };
 }
-function loadState(){
-  try{
-    const raw = localStorage.getItem('aiTeacherState');
-    state = raw ? JSON.parse(raw) : defaultState();
-  }catch(e){ state = defaultState(); }
-  if(!state.stats) state = defaultState();
-  migrateState();
+function loadAccounts(){
+  try{ accounts = JSON.parse(localStorage.getItem('aiTeacherAccounts')||'{}'); }catch(e){ accounts = {}; }
+  if(typeof accounts !== 'object' || accounts===null) accounts = {};
 }
-function migrateState(){
-  // מבטיח שכל state ישן ששמור מגרסה קודמת יקבל את כל השדות החדשים
-  // שנוספו מאז, כדי שלא יקרסו/יישארו undefined בשקט.
+function loadSession(){
+  try{ session = JSON.parse(localStorage.getItem('aiTeacherSession')||'null') || {mode:null}; }catch(e){ session = {mode:null}; }
+  if(!Array.isArray(session.parentChildren)) session.parentChildren = [];
+}
+function migrateAccount(acc){
   const d = defaultState();
-  Object.keys(d).forEach(k=>{
-    if(state[k] === undefined || state[k] === null) state[k] = d[k];
-  });
-  if(!Array.isArray(state.parentMessages)) state.parentMessages = [];
-  if(!Array.isArray(state.mistakes)) state.mistakes = [];
-  if(!Array.isArray(state.owned)) state.owned = [];
-  if(!Array.isArray(state.achievementsUnlocked)) state.achievementsUnlocked = [];
-  if(!Array.isArray(state.students)) state.students = [];
-  if(!Array.isArray(state.homework)) state.homework = [];
-  if(!state.profile) state.profile = d.profile;
-  else Object.keys(d.profile).forEach(k=>{ if(state.profile[k]===undefined) state.profile[k] = d.profile[k]; });
-  if(!state.stats) state.stats = d.stats;
-  if(!state.stats.subjectProgress) state.stats.subjectProgress = {};
-  if(!state.stats.dailyMinutes) state.stats.dailyMinutes = {};
-  saveState();
+  Object.keys(d).forEach(k=>{ if(acc[k]===undefined || acc[k]===null) acc[k] = d[k]; });
+  if(!Array.isArray(acc.parentMessages)) acc.parentMessages = [];
+  if(!Array.isArray(acc.mistakes)) acc.mistakes = [];
+  if(!Array.isArray(acc.owned)) acc.owned = [];
+  if(!Array.isArray(acc.achievementsUnlocked)) acc.achievementsUnlocked = [];
+  if(!Array.isArray(acc.students)) acc.students = [];
+  if(!Array.isArray(acc.homework)) acc.homework = [];
+  if(!acc.profile) acc.profile = d.profile;
+  else Object.keys(d.profile).forEach(k=>{ if(acc.profile[k]===undefined) acc.profile[k] = d.profile[k]; });
+  if(!acc.stats) acc.stats = d.stats;
+  if(!acc.stats.subjectProgress) acc.stats.subjectProgress = {};
+  if(!acc.stats.dailyMinutes) acc.stats.dailyMinutes = {};
+  return acc;
 }
-function saveState(){ localStorage.setItem('aiTeacherState', JSON.stringify(state)); }
+function saveState(){
+  // state הוא reference חי בתוך accounts[username] (אין שכפול), אז מספיק לשמור accounts+session
+  localStorage.setItem('aiTeacherAccounts', JSON.stringify(accounts));
+  localStorage.setItem('aiTeacherSession', JSON.stringify(session));
+}
+function usernameTaken(name){
+  return Object.keys(accounts).some(u=>u.toLowerCase()===name.toLowerCase());
+}
+function setActiveStudent(username){
+  session.mode = 'student';
+  session.username = username;
+  state = accounts[username];
+}
 
 /* =========================================================
    NAVIGATION
@@ -751,6 +774,11 @@ function showScreen(name){
   if(name==='teacher-dash') renderTeacherDash();
   if(name==='quiz-setup') renderQuizSetup();
   if(name==='edit-profile') renderEditProfile();
+  if(name==='parent-login') renderParentLoginRows();
+  if(name==='settings'){
+    const btn = document.getElementById('back-to-parent-btn');
+    if(btn) btn.classList.toggle('hidden', !(session.mode==='student' && session.parentChildren && session.parentChildren.length));
+  }
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -760,43 +788,50 @@ function showToast(msg){
 }
 
 /* =========================================================
-   AUTH / ONBOARDING
+   AUTH: LOGIN / REGISTER (student accounts)
 ========================================================= */
-function fakeLogin(provider){
-  showToast('מתחבר עם '+provider+'... ✅');
-  setTimeout(()=>{
-    if(state.profile.name){
-      if(state.profile.password){
-        const entered = prompt('שלום '+state.profile.name+'! הזן/י סיסמה כדי להתחבר:');
-        if(entered !== state.profile.password){ showToast('סיסמה שגויה 😕'); return; }
-      }
-      state.loggedIn = true; saveState();
-      showScreen('home');
-    } else {
-      showScreen('onboard'); renderEmojiPicker('ob-emoji-picker','ob-avatar-preview');
-    }
-  }, 500);
-}
-function goGuest(){
-  if(state.profile.name){
-    state.loggedIn = true; saveState(); showScreen('home'); return;
-  }
-  state.profile.name = 'אורח/ת';
+function doLogin(){
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value;
+  if(!u){ showToast('הזן/י שם משתמש'); return; }
+  const acc = accounts[u];
+  if(!acc){ showToast('שם משתמש לא נמצא'); return; }
+  if((acc.profile.password||'') !== p){ showToast('סיסמה שגויה 😕'); return; }
+  setActiveStudent(u);
   saveState();
+  showScreen('home');
+}
+function startRegister(){
   showScreen('onboard');
+  window._newProfile = {avatar:'🦊'};
+  const err = document.getElementById('ob-error'); if(err) err.style.display='none';
+  document.getElementById('ob-name').value='';
+  document.getElementById('ob-password').value='';
+  document.getElementById('ob-age').value='';
+  ['1','2','3'].forEach(n=>{
+    document.getElementById('ob-step'+n).classList.toggle('hidden', n!=='1');
+    document.getElementById('dot'+n).classList.toggle('on', n==='1');
+  });
   renderEmojiPicker('ob-emoji-picker','ob-avatar-preview');
 }
 function obNext(step){
   if(step===2){
-    state.profile.name = document.getElementById('ob-name').value || 'תלמיד/ה';
-    state.profile.password = document.getElementById('ob-password').value || '';
-    state.profile.age = document.getElementById('ob-age').value;
-    state.profile.grade = document.getElementById('ob-grade').value;
+    const name = document.getElementById('ob-name').value.trim();
+    const err = document.getElementById('ob-error');
+    if(!name){ err.textContent='חובה לבחור שם משתמש'; err.style.display='block'; return; }
+    if(usernameTaken(name)){ err.textContent='שם המשתמש הזה כבר תפוס, נסה/י שם אחר'; err.style.display='block'; return; }
+    err.style.display='none';
+    window._newProfile = window._newProfile || {};
+    window._newProfile.name = name;
+    window._newProfile.password = document.getElementById('ob-password').value || '';
+    window._newProfile.age = document.getElementById('ob-age').value;
+    window._newProfile.grade = document.getElementById('ob-grade').value;
   }
   if(step===3){
-    state.profile.lang = document.getElementById('ob-lang').value;
-    state.profile.country = document.getElementById('ob-country').value;
-    state.profile.curriculum = document.getElementById('ob-curriculum').value;
+    window._newProfile.lang = document.getElementById('ob-lang').value;
+    window._newProfile.country = document.getElementById('ob-country').value;
+    window._newProfile.curriculum = document.getElementById('ob-curriculum').value;
+    window._newProfile.avatar = window._newProfile.avatar || '🦊';
   }
   ['1','2','3'].forEach(n=>{
     document.getElementById('ob-step'+n).classList.toggle('hidden', n!=String(step));
@@ -804,24 +839,32 @@ function obNext(step){
   });
 }
 function renderEmojiPicker(pickerId, previewId){
+  window._newProfile = window._newProfile || {avatar:'🦊'};
   const wrap = document.getElementById(pickerId);
-  wrap.innerHTML = AVATAR_EMOJIS.map(e=>`<button class="emoji-opt ${e===state.profile.avatar?'sel':''}" onclick="pickEmoji('${e}','${pickerId}','${previewId}')">${e}</button>`).join('');
-  document.getElementById(previewId).textContent = state.profile.avatar;
+  wrap.innerHTML = AVATAR_EMOJIS.map(e=>`<button class="emoji-opt ${e===window._newProfile.avatar?'sel':''}" onclick="pickEmoji('${e}','${pickerId}','${previewId}')">${e}</button>`).join('');
+  document.getElementById(previewId).textContent = window._newProfile.avatar;
 }
 function pickEmoji(e, pickerId, previewId){
-  state.profile.avatar = e;
+  window._newProfile.avatar = e;
   document.getElementById(previewId).textContent = e;
   document.querySelectorAll('#'+pickerId+' .emoji-opt').forEach(b=>b.classList.toggle('sel', b.textContent===e));
 }
 function finishOnboarding(){
-  state.loggedIn = true;
+  const p = window._newProfile;
+  const acc = defaultState();
+  Object.assign(acc.profile, p);
+  accounts[p.name] = acc;
+  setActiveStudent(p.name);
   saveState();
   showScreen('home');
-  showToast('ברוך/ה הבא/ה, '+state.profile.name+'! 🎉');
+  showToast('ברוך/ה הבא/ה, '+p.name+'! 🎉');
+  window._newProfile = null;
 }
 function logout(){
   if(confirm('להתנתק? כל ההתקדמות שלך תישמר במכשיר זה, ותוכל/י להתחבר שוב.')){
-    state.loggedIn = false; saveState(); showScreen('splash');
+    session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
+    saveState();
+    showScreen('splash');
   }
 }
 function renderEditProfile(){
@@ -835,7 +878,18 @@ function renderEditProfile(){
   document.getElementById('ep-curriculum').value = p.curriculum||'תוכנית משרד החינוך';
 }
 function saveProfileEdits(){
-  state.profile.name = document.getElementById('ep-name').value.trim() || state.profile.name;
+  const newName = document.getElementById('ep-name').value.trim() || state.profile.name;
+  const oldName = state.profile.name;
+  if(newName !== oldName){
+    if(usernameTaken(newName)){ showToast('שם המשתמש הזה כבר תפוס'); return; }
+    delete accounts[oldName];
+    state.profile.name = newName;
+    accounts[newName] = state;
+    if(session.mode==='student' && session.username===oldName) session.username = newName;
+    if(session.parentActiveChild===oldName) session.parentActiveChild = newName;
+    const idx = session.parentChildren.indexOf(oldName);
+    if(idx>-1) session.parentChildren[idx] = newName;
+  }
   const newPass = document.getElementById('ep-password').value;
   if(newPass) state.profile.password = newPass;
   state.profile.age = document.getElementById('ep-age').value;
@@ -1434,9 +1488,72 @@ function renderStatistics(){
 }
 
 /* =========================================================
+   PARENT / TEACHER LOGIN (connect to existing child accounts)
+========================================================= */
+let parentLoginRowCount = 0;
+function renderParentLoginRows(){
+  parentLoginRowCount = 0;
+  document.getElementById('parent-login-rows').innerHTML = '';
+  document.getElementById('parent-login-error').style.display = 'none';
+  addParentLoginRow();
+}
+function addParentLoginRow(){
+  parentLoginRowCount++;
+  const id = parentLoginRowCount;
+  const wrap = document.getElementById('parent-login-rows');
+  const row = document.createElement('div');
+  row.className = 'card';
+  row.style.marginBottom = '10px';
+  row.innerHTML = `
+    <div class="field"><label>שם משתמש של הילד/ה</label><input id="pl-user-${id}" placeholder="שם משתמש"></div>
+    <div class="field" style="margin-bottom:0;"><label>סיסמה</label><input id="pl-pass-${id}" type="password" placeholder="סיסמה"></div>
+  `;
+  wrap.appendChild(row);
+}
+function connectParent(){
+  const rows = document.querySelectorAll('#parent-login-rows .card');
+  const validUsernames = [];
+  let anyFilled = false;
+  rows.forEach((row,i)=>{
+    const u = row.querySelector('input[id^="pl-user-"]').value.trim();
+    const p = row.querySelector('input[id^="pl-pass-"]').value;
+    if(!u) return;
+    anyFilled = true;
+    const acc = accounts[u];
+    if(acc && (acc.profile.password||'')===p) validUsernames.push(u);
+  });
+  const err = document.getElementById('parent-login-error');
+  if(!anyFilled){ err.textContent='הזן/י לפחות שם משתמש וסיסמה אחד'; err.style.display='block'; return; }
+  if(validUsernames.length===0){ err.textContent='לא נמצא אף חשבון תואם — בדוק/י שם משתמש וסיסמה'; err.style.display='block'; return; }
+  err.style.display='none';
+  session.mode = 'parent';
+  session.parentChildren = validUsernames;
+  session.parentActiveChild = validUsernames[0];
+  state = accounts[session.parentActiveChild];
+  saveState();
+  showScreen('parent-dash');
+  const skipped = rows.length - validUsernames.length;
+  showToast(skipped>0 ? `מחובר/ת ל-${validUsernames.length} חשבונות (${skipped} לא נמצאו)` : `מחובר/ת ל-${validUsernames.length} חשבונות`);
+}
+function exitParentMode(){
+  session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
+  state = null;
+  saveState();
+  showScreen('splash');
+}
+
+/* =========================================================
    PARENT DASHBOARD
 ========================================================= */
 function renderParentDash(){
+  const tabsWrap = document.getElementById('pd-child-tabs');
+  tabsWrap.innerHTML = session.parentChildren.map(u=>{
+    const acc = accounts[u];
+    const name = acc ? acc.profile.name : u;
+    return `<button class="diff-tab ${u===session.parentActiveChild?'sel':''}" onclick="switchChildTab('${u}')">${name}</button>`;
+  }).join('');
+  document.getElementById('pd-enter-name').textContent = state.profile.name;
+
   document.getElementById('pd-today').textContent = state.todayMinutes+' דק\'';
   document.getElementById('pd-streak').textContent = state.streak;
   document.getElementById('pd-level').textContent = state.level;
@@ -1449,6 +1566,19 @@ function renderParentDash(){
     : `<span style="color:var(--text-dim); font-size:13px;">אין עדיין נושאים חלשים מזוהים 🙂</span>`;
   document.getElementById('pd-goal').value = state.dailyGoal;
   document.getElementById('pd-block-toggle').classList.toggle('on', state.blockGames);
+}
+function switchChildTab(username){
+  session.parentActiveChild = username;
+  state = accounts[username];
+  saveState();
+  renderParentDash();
+}
+function enterAsChild(){
+  const username = session.parentActiveChild;
+  setActiveStudent(username);
+  saveState();
+  showScreen('home');
+  showToast('נכנסת לחשבון של '+state.profile.name);
 }
 function toggleBlockGames(){
   state.blockGames = !state.blockGames;
@@ -1494,14 +1624,30 @@ function assignHomework(){
    INIT
 ========================================================= */
 function init(){
-  loadState();
-  document.body.classList.toggle('light', !state.darkMode);
-  if(state.profile.name && state.loggedIn){
+  loadAccounts();
+  loadSession();
+  // ניקוי הגנתי: אם session מצביע על username שכבר לא קיים ב-accounts (נמחק/שם שונה), מתאפס
+  if(session.mode==='student' && !accounts[session.username]) session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
+  if(session.mode==='parent'){
+    session.parentChildren = session.parentChildren.filter(u=>accounts[u]);
+    if(session.parentChildren.length===0) session = {mode:null, username:null, parentChildren:[], parentActiveChild:null};
+    else if(!accounts[session.parentActiveChild]) session.parentActiveChild = session.parentChildren[0];
+  }
+  Object.keys(accounts).forEach(u=> migrateAccount(accounts[u]));
+
+  if(session.mode==='student'){
+    state = accounts[session.username];
+    document.body.classList.toggle('light', !state.darkMode);
     ensureDailyReset();
     showScreen('home');
+  } else if(session.mode==='parent'){
+    state = accounts[session.parentActiveChild];
+    document.body.classList.toggle('light', !state.darkMode);
+    showScreen('parent-dash');
   } else {
     showScreen('splash');
   }
+  saveState();
 }
 init();
 </script>
