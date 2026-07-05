@@ -572,9 +572,6 @@ input,select,textarea{font-family:var(--font-b);}
   <div class="field"><label>תוכנית לימודים</label>
     <select id="ep-curriculum"><option>תוכנית משרד החינוך</option><option>בגרויות מוגברות</option><option>לימוד עצמאי / העשרה</option></select>
   </div>
-  <div class="field"><label>קוד בקרת הורים חדש (4 ספרות, השאר ריק אם לא רוצים לשנות)</label>
-    <input id="ep-parentcode" inputmode="numeric" maxlength="4" placeholder="קוד חדש">
-  </div>
   <button class="btn btn-gold btn-block" onclick="saveProfileEdits()">💾 שמור שינויים</button>
 </section>
 
@@ -613,31 +610,9 @@ input,select,textarea{font-family:var(--font-b);}
     <input id="pd-msg" placeholder="כתוב הודעה מעודדת..." style="width:100%; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); margin-bottom:10px;">
     <button class="btn btn-teal btn-block" onclick="sendParentMessage()">שלח הודעה</button>
   </div>
-  <button class="btn btn-ghost btn-block" style="margin-bottom:14px;" onclick="showScreen('teacher-dash')">🧑‍🏫 אזור מורים (ניהול כיתה)</button>
 </section>
 
-<!-- ================= TEACHER DASHBOARD ================= -->
-<section class="screen" id="screen-teacher-dash">
-  <div class="topbar"><button class="back-btn" onclick="showScreen('parent-dash')">→</button><h2>🧑‍🏫 אזור מורים</h2><div style="width:38px"></div></div>
-  <div class="card" style="margin-bottom:14px;">
-    <div class="stat-block"><span>קוד כיתה</span><b id="class-code">—</b></div>
-    <button class="btn btn-gold btn-block" onclick="generateClassCode()">➕ צור כיתה חדשה</button>
-  </div>
-  <div class="section-title">➕ הוספת תלמיד/ה לכיתה</div>
-  <div class="card" style="margin-bottom:14px;">
-    <div class="field"><label>שם משתמש</label><input id="cls-add-user" placeholder="שם משתמש של התלמיד/ה"></div>
-    <div class="field" style="margin-bottom:10px;"><label>סיסמה</label><input id="cls-add-pass" type="password" placeholder="הסיסמה שלו/ה"></div>
-    <button class="btn btn-teal btn-block" onclick="addStudentToClass()">הוסף/י לכיתה</button>
-    <div id="cls-add-error" style="color:var(--coral); font-size:12.5px; margin-top:8px; display:none;"></div>
-  </div>
-  <div class="section-title">👥 תלמידים בכיתה</div>
-  <div class="card" id="teacher-students"></div>
-  <div class="section-title">📝 שיעורי בית</div>
-  <div class="card">
-    <input id="hw-text" placeholder="תיאור שיעורי הבית..." style="width:100%; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); margin-bottom:10px;">
-    <button class="btn btn-teal btn-block" onclick="assignHomework()">שלח לכיתה</button>
-  </div>
-</section>
+<!-- ================= TEACHER DASHBOARD REMOVED ================= -->
 
 </div><!-- /.app -->
 
@@ -784,7 +759,6 @@ function defaultState(){
       dailyMinutes:{} // 'YYYY-MM-DD': minutes
     },
     dailyMissions:null, dailyMissionsDate:null,
-    classCode:null, students:[], homework:[],
     darkMode:true
   };
 }
@@ -795,8 +769,6 @@ function migrateAccount(acc){
   if(!Array.isArray(acc.mistakes)) acc.mistakes = [];
   if(!Array.isArray(acc.owned)) acc.owned = [];
   if(!Array.isArray(acc.achievementsUnlocked)) acc.achievementsUnlocked = [];
-  if(!Array.isArray(acc.students)) acc.students = [];
-  if(!Array.isArray(acc.homework)) acc.homework = [];
   if(!acc.profile) acc.profile = d.profile;
   else Object.keys(d.profile).forEach(k=>{ if(acc.profile[k]===undefined) acc.profile[k] = d.profile[k]; });
   if(!acc.stats) acc.stats = d.stats;
@@ -833,7 +805,6 @@ function showScreen(name){
   if(name==='mistakes') renderMistakes();
   if(name==='statistics') renderStatistics();
   if(name==='parent-dash') renderParentDash();
-  if(name==='teacher-dash') renderTeacherDash();
   if(name==='quiz-setup') renderQuizSetup();
   if(name==='edit-profile') renderEditProfile();
 }
@@ -939,7 +910,6 @@ function renderEditProfile(){
   document.getElementById('ep-lang').value = p.lang||'he';
   document.getElementById('ep-country').value = p.country||'ישראל';
   document.getElementById('ep-curriculum').value = p.curriculum||'תוכנית משרד החינוך';
-  document.getElementById('ep-parentcode').value = '';
 }
 async function saveProfileEdits(){
   const newPass = document.getElementById('ep-password').value.trim();
@@ -953,8 +923,6 @@ async function saveProfileEdits(){
       return;
     }
   }
-  const newCode = document.getElementById('ep-parentcode').value.trim().slice(0,4);
-  if(newCode) state.profile.parentCode = newCode;
   state.profile.age = document.getElementById('ep-age').value;
   state.profile.grade = document.getElementById('ep-grade').value;
   state.profile.lang = document.getElementById('ep-lang').value;
@@ -1708,79 +1676,6 @@ function sendParentMessage(){
   saveState();
   document.getElementById('pd-msg').value = '';
   showToast('ההודעה נשלחה לתלמיד/ה 📩');
-}
-
-/* =========================================================
-   TEACHER DASHBOARD
-========================================================= */
-function renderTeacherDash(){
-  document.getElementById('class-code').textContent = state.classCode || '—';
-  document.getElementById('teacher-students').innerHTML = state.students.length
-    ? state.students.map(s=>{
-        const name = typeof s === 'string' ? s : s.name; // תאימות לאחור לנתונים ישנים (הדגמה)
-        const uid = typeof s === 'string' ? null : s.uid;
-        return `<div class="stat-block"><span>${name}</span>${uid ? `<button class="btn btn-ghost" style="padding:6px 10px; font-size:11px;" onclick="removeStudentFromClass('${uid}')">הסר</button>` : `<span class="pill">הדגמה</span>`}</div>`;
-      }).join('')
-    : `<span style="color:var(--text-dim); font-size:13px;">אין עדיין תלמידים רשומים בכיתה</span>`;
-}
-function generateClassCode(){
-  state.classCode = 'C-' + Math.random().toString(36).slice(2,7).toUpperCase();
-  if(!Array.isArray(state.students)) state.students = [];
-  saveState();
-  renderTeacherDash();
-  showToast('כיתה נוצרה: '+state.classCode);
-}
-// בודקים שם משתמש+סיסמה מול Firebase Auth בלי לנתק את המורה מהחשבון שלו/ה,
-// ע"י שימוש במופע Firebase משני זמני רק לצורך האימות.
-async function addStudentToClass(){
-  const uInput = document.getElementById('cls-add-user').value.trim();
-  const p = document.getElementById('cls-add-pass').value.trim();
-  const err = document.getElementById('cls-add-error');
-  err.style.display = 'none';
-  if(!uInput || !p){ err.textContent = 'הזן/י שם משתמש וסיסמה'; err.style.display='block'; return; }
-  if(!state.classCode){ err.textContent = 'צור/י כיתה קודם'; err.style.display='block'; return; }
-  showToast('בודק/ת פרטים...');
-  let secondaryApp;
-  try{
-    secondaryApp = firebase.initializeApp(firebaseConfig, 'verify-'+Date.now());
-    const secondaryAuth = secondaryApp.auth();
-    const cred = await secondaryAuth.signInWithEmailAndPassword(usernameToEmail(uInput), p);
-    const uid = cred.user.uid;
-    const doc = await db.collection('students').doc(uid).get();
-    const displayName = doc.exists ? (doc.data().profile.name || uInput) : uInput;
-    await secondaryAuth.signOut();
-    await secondaryApp.delete();
-
-    if(uid === currentUid){ err.textContent = 'זה החשבון שלך :)'; err.style.display='block'; return; }
-    if(!Array.isArray(state.students)) state.students = [];
-    if(state.students.some(s => (typeof s==='object' && s.uid===uid))){
-      err.textContent = 'התלמיד/ה הזה/זו כבר בכיתה'; err.style.display='block'; return;
-    }
-    state.students.push({uid, name: displayName});
-    saveState();
-    renderTeacherDash();
-    document.getElementById('cls-add-user').value = '';
-    document.getElementById('cls-add-pass').value = '';
-    showToast('נוסף/ה לכיתה: ' + displayName + ' ✅');
-  }catch(e){
-    if(secondaryApp){ try{ await secondaryApp.delete(); }catch(_){} }
-    err.textContent = authErrorMessage(e);
-    err.style.display = 'block';
-  }
-}
-function removeStudentFromClass(uid){
-  state.students = state.students.filter(s => !(typeof s==='object' && s.uid===uid));
-  saveState();
-  renderTeacherDash();
-  showToast('הוסר/ה מהכיתה');
-}
-function assignHomework(){
-  const v = document.getElementById('hw-text').value.trim();
-  if(!v) return;
-  state.homework.unshift({text:v, date:new Date().toLocaleDateString('he-IL')});
-  saveState();
-  document.getElementById('hw-text').value = '';
-  showToast('שיעורי הבית נשלחו לכיתה ✅');
 }
 
 /* =========================================================
