@@ -881,18 +881,25 @@ function pickEmoji(e, pickerId, previewId){
   document.getElementById(previewId).textContent = e;
   document.querySelectorAll('#'+pickerId+' .emoji-opt').forEach(b=>b.classList.toggle('sel', b.textContent===e));
 }
+let skipNextAuthHandling = false;
 async function finishOnboarding(){
   const p = window._newProfile;
   if(!p.password || p.password.length < 6){ showToast('הסיסמה חייבת להכיל לפחות 6 תווים'); return; }
   showToast('יוצר/ת חשבון...');
   try{
+    skipNextAuthHandling = true;
     const cred = await auth.createUserWithEmailAndPassword(usernameToEmail(p.name), p.password);
     const acc = defaultState();
     Object.assign(acc.profile, p);
-    await db.collection('students').doc(cred.user.uid).set(acc);
-    // onAuthStateChanged יטען את הנתונים ויעביר למסך הבית
+    currentUid = cred.user.uid;
+    state = acc;
+    await db.collection('students').doc(cred.user.uid).set(state);
+    document.body.classList.toggle('light', !state.darkMode);
+    ensureDailyReset();
+    showScreen('home');
     window._newProfile = null;
   }catch(e){
+    skipNextAuthHandling = false;
     showToast(authErrorMessage(e));
   }
 }
@@ -1682,15 +1689,11 @@ function sendParentMessage(){
    INIT
 ========================================================= */
 auth.onAuthStateChanged(async (user)=>{
+  if(skipNextAuthHandling){ skipNextAuthHandling = false; return; }
   if(user){
     currentUid = user.uid;
     try{
-      let docSnap = await db.collection('students').doc(user.uid).get();
-      if(!docSnap.exists){
-        // מקרה קצה: יתכן שהמסמך עדיין בדרך (רגע אחרי הרשמה), מנסים שוב פעם אחת
-        await new Promise(r=>setTimeout(r, 800));
-        docSnap = await db.collection('students').doc(user.uid).get();
-      }
+      const docSnap = await db.collection('students').doc(user.uid).get();
       if(docSnap.exists){
         state = migrateAccount(docSnap.data());
       } else {
