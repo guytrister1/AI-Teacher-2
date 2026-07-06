@@ -716,6 +716,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+// חלק מהרשתות (בתי ספר, ראוטרים מסוימים, VPN) חוסמות/מאטות את חיבור ה-WebChannel
+// שפיירסטור מנסה כברירת מחדל, מה שגורם לזה "לתקוע" עד דקה לפני שנופל חזרה
+// לחיבור אחר. ההגדרה הזו גורמת לזה לזהות את הבעיה ולעבור מיד לחיבור תואם יותר.
+db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
 
 let state = null;      // חשבון התלמיד/ה הפעיל, נטען מ-Firestore
 let currentUid = null; // ה-UID של המשתמש המחובר ב-Firebase Auth
@@ -728,6 +732,12 @@ function usernameToEmail(username){
   const clean = username.trim().toLowerCase();
   const b64 = btoa(unescape(encodeURIComponent(clean))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   return 'u' + b64 + '@aiteacher-app.internal';
+}
+function withTimeout(promise, ms, message){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=> setTimeout(()=> reject(new Error(message)), ms))
+  ]);
 }
 function authErrorMessage(e){
   const map = {
@@ -825,10 +835,13 @@ async function doLogin(){
   if(!p){ showToast('הזן/י סיסמה'); return; }
   showToast('מתחבר/ת...');
   try{
-    await auth.signInWithEmailAndPassword(usernameToEmail(uInput), p);
+    await withTimeout(
+      auth.signInWithEmailAndPassword(usernameToEmail(uInput), p),
+      15000, 'החיבור לשרת איטי מדי — בדוק/י אינטרנט ונסה/י שוב'
+    );
     // onAuthStateChanged יטען את הנתונים ויעביר למסך הבית
   }catch(e){
-    showToast(authErrorMessage(e));
+    showToast(e.message && !e.code ? e.message : authErrorMessage(e));
   }
 }
 function startRegister(){
@@ -888,19 +901,25 @@ async function finishOnboarding(){
   showToast('יוצר/ת חשבון...');
   try{
     skipNextAuthHandling = true;
-    const cred = await auth.createUserWithEmailAndPassword(usernameToEmail(p.name), p.password);
+    const cred = await withTimeout(
+      auth.createUserWithEmailAndPassword(usernameToEmail(p.name), p.password),
+      15000, 'החיבור לשרת איטי מדי — בדוק/י אינטרנט ונסה/י שוב'
+    );
     const acc = defaultState();
     Object.assign(acc.profile, p);
     currentUid = cred.user.uid;
     state = acc;
-    await db.collection('students').doc(cred.user.uid).set(state);
+    await withTimeout(
+      db.collection('students').doc(cred.user.uid).set(state),
+      15000, 'החשבון נוצר אבל שמירת הנתונים איטית מדי — נסה/י לרענן ולהתחבר'
+    );
     document.body.classList.toggle('light', !state.darkMode);
     ensureDailyReset();
     showScreen('home');
     window._newProfile = null;
   }catch(e){
     skipNextAuthHandling = false;
-    showToast(authErrorMessage(e));
+    showToast(e.message && !e.code ? e.message : authErrorMessage(e));
   }
 }
 function logout(){
