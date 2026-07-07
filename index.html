@@ -427,6 +427,20 @@ input,select,textarea{font-family:var(--font-b);}
   <div class="grid3" id="subjects-grid"></div>
 </section>
 
+<section class="screen" id="screen-custom-topic">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('subjects')">→</button><h2>✨ מותאם אישית</h2><div style="width:38px"></div></div>
+  <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:14px;">בחר/י מקצוע, כתוב/כתבי כל נושא שתרצה/י (גם אם הוא לא ברשימה הרגילה), ובחר/י כיתה — ה-AI יתאים את עצמו בדיוק לזה.</p>
+  <div class="field"><label>מקצוע</label><select id="custom-subject"></select></div>
+  <div class="field"><label>נושא (כתוב/כתבי חופשי)</label><input id="custom-topic-input" placeholder="למשל: גיאומטריה, זמנים באנגלית, מלחמת העולם השנייה..."></div>
+  <div class="field"><label>כיתה</label>
+    <select id="custom-grade">
+      <option>גן חובה</option><option>א'</option><option>ב'</option><option>ג'</option><option>ד'</option><option>ה'</option><option>ו'</option>
+      <option>ז'</option><option>ח'</option><option>ט'</option><option selected>י'</option><option>י"א</option><option>י"ב</option>
+    </select>
+  </div>
+  <button class="btn btn-gold btn-block" onclick="confirmCustomTopic()">✅ אישור</button>
+</section>
+
 <section class="screen" id="screen-topics">
   <div class="topbar"><button class="back-btn" onclick="showScreen('subjects')">→</button><h2 id="topics-title">נושאים</h2><div style="width:38px"></div></div>
   <div class="diff-tabs" id="topics-list"></div>
@@ -756,6 +770,7 @@ function showScreen(name){
   window.scrollTo(0,0);
   if(name==='home') renderHome();
   if(name==='subjects') renderSubjects();
+  if(name==='custom-topic') renderCustomTopicScreen();
   if(name==='achievements') renderAchievements();
   if(name==='avatar') renderAvatarScreen();
   if(name==='shop') renderShop();
@@ -1023,7 +1038,13 @@ function renderSubjects(){
   const q = (document.getElementById('subject-search').value||'').trim();
   const grid = document.getElementById('subjects-grid');
   const filtered = SUBJECTS.filter(s=>s.name.includes(q));
-  grid.innerHTML = filtered.map(s=>{
+  let html = '';
+  if(!q){
+    html += `<button class="subject-tile" style="border-color:var(--violet);" onclick="showScreen('custom-topic')">
+      <span class="ic3">✨</span><span class="sname">מותאם אישית</span>
+    </button>`;
+  }
+  html += filtered.map(s=>{
     const prog = state.stats.subjectProgress[s.id];
     const pct = prog && prog.total ? Math.round(100*prog.correct/prog.total) : 0;
     return `<button class="subject-tile" onclick="openSubject('${s.id}')">
@@ -1031,9 +1052,11 @@ function renderSubjects(){
       <div class="sprog"><i style="width:${pct}%"></i></div>
     </button>`;
   }).join('');
+  grid.innerHTML = html;
 }
 function openSubject(id){
   currentSubject = SUBJECTS.find(s=>s.id===id);
+  customGradeOverride = null; // חוזרים לזרימה הרגילה, מבטלים כל התאמת כיתה מהזרימה המותאמת אישית
   document.getElementById('topics-title').textContent = currentSubject.ic+' '+currentSubject.name;
   const list = document.getElementById('topics-list');
   const topics = topicsFor(id);
@@ -1043,6 +1066,7 @@ function openSubject(id){
   showScreen('topics');
 }
 let currentTopic = null;
+let customGradeOverride = null;
 function selectTopic(t, el){
   currentTopic = t;
   document.querySelectorAll('#topics-list .diff-tab').forEach(b=>b.classList.remove('sel'));
@@ -1051,6 +1075,25 @@ function selectTopic(t, el){
 function openQuizSetupFromTopic(){
   showScreen('quiz-setup');
   document.getElementById('quiz-subject').value = currentSubject.id;
+}
+function renderCustomTopicScreen(){
+  const sel = document.getElementById('custom-subject');
+  sel.innerHTML = SUBJECTS.map(s=>`<option value="${s.id}">${s.ic} ${s.name}</option>`).join('');
+  document.getElementById('custom-topic-input').value = '';
+  document.getElementById('custom-grade').value = state.profile.grade || "י'";
+}
+function confirmCustomTopic(){
+  const subjId = document.getElementById('custom-subject').value;
+  const topic = document.getElementById('custom-topic-input').value.trim();
+  const grade = document.getElementById('custom-grade').value;
+  if(!topic){ showToast('כתוב/כתבי נושא קודם'); return; }
+  currentSubject = SUBJECTS.find(s=>s.id===subjId);
+  currentTopic = topic;
+  customGradeOverride = grade;
+  document.getElementById('topics-title').textContent = '✨ '+currentSubject.ic+' '+currentSubject.name;
+  document.getElementById('topics-list').innerHTML = `<span class="pill">📌 ${topic} • כיתה ${grade}</span>`;
+  progressMission('newTopic',1);
+  showScreen('topics');
 }
 
 const WORKER_URL = "https://ai-teacher-proxy.ai-teacher1.workers.dev";
@@ -1352,7 +1395,8 @@ async function loadPracticeQuestion(){
 }
 async function generateQuestion(subject, topic, difficulty){
   const sys = 'אתה מחולל שאלות לימודיות. החזר אך ורק אובייקט JSON תקני (ללא טקסט נוסף, ללא Markdown) במבנה: {"question":"טקסט השאלה בעברית","type":"multiple_choice או true_false","options":["אפשרות1","אפשרות2","אפשרות3","אפשרות4"],"correctIndex":0,"explanation":"הסבר קצר בעברית מדוע זו התשובה הנכונה"}. עבור true_false האפשרויות יהיו בדיוק ["נכון","לא נכון"].' + NO_LATEX_RULE;
-  const userMsg = 'צור שאלה במקצוע: '+subject+', נושא: '+topic+', רמת קושי: '+difficulty+'. חשוב: JSON בלבד.';
+  const gradeNote = customGradeOverride ? (', מותאם לרמת כיתה '+customGradeOverride) : '';
+  const userMsg = 'צור שאלה במקצוע: '+subject+', נושא: '+topic+', רמת קושי: '+difficulty+gradeNote+'. חשוב: JSON בלבד.';
   const text = await callClaude([{role:'user', content:userMsg}], sys);
   const q = extractJSON(text);
   q.question = sanitizeAIText(q.question);
