@@ -299,6 +299,28 @@ input,select,textarea{font-family:var(--font-b);}
 .reply-preview .rp-text{flex:1; font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .reply-preview .rp-close{background:none; border:none; color:var(--text-dim); font-size:15px; padding:2px 6px;}
 .msg .quoted-ref{background:rgba(255,255,255,.08); border-inline-start:3px solid rgba(255,255,255,.4); border-radius:8px; padding:6px 8px; font-size:11.5px; opacity:.85; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+/* ---------- games hub ---------- */
+.games-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.game-tile{
+  position:relative; border-radius:18px; overflow:hidden; aspect-ratio:1/1; border:1px solid var(--line);
+  display:flex; align-items:flex-end; box-shadow:var(--shadow); cursor:pointer;
+}
+.game-tile .gt-emoji{position:absolute; top:14px; right:14px; font-size:32px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.game-tile .gt-caption{
+  width:100%; padding:10px 10px 12px; background:linear-gradient(to top, rgba(0,0,0,.75), transparent);
+  color:#fff; font-size:12.5px; font-weight:800; text-align:center;
+}
+.arcade-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.arcade-lives{font-size:16px; letter-spacing:2px;}
+.arcade-progress-label{display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-dim); margin-bottom:6px;}
+.arcade-banner{
+  border-radius:18px; padding:22px 16px; text-align:center; color:#fff; margin-bottom:16px;
+  text-shadow:0 2px 8px rgba(0,0,0,.5);
+}
+.arcade-banner .ab-emoji{font-size:40px; display:block; margin-bottom:6px;}
+.arcade-banner .ab-title{font-family:var(--font-d); font-size:18px; font-weight:800;}
+.arcade-flavor{text-align:center; font-size:13px; color:var(--teal); font-weight:700; min-height:20px; margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -404,7 +426,7 @@ input,select,textarea{font-family:var(--font-b);}
     <button onclick="openChat()"><span class="ic2">🤖</span>AI Chat</button>
     <button onclick="showScreen('subjects')"><span class="ic2">✏️</span>תרגול</button>
     <button onclick="showScreen('quiz-setup')"><span class="ic2">📝</span>מבחנים</button>
-    <button onclick="showToast('בקרוב! 🎮')"><span class="ic2">🎮</span>משחקים</button>
+    <button onclick="showScreen('games-hub')"><span class="ic2">🎮</span>משחקים</button>
     <button onclick="showScreen('achievements')"><span class="ic2">🏆</span>פרסים</button>
     <button onclick="showScreen('mistakes')"><span class="ic2">🔁</span>טעויות</button>
     <button onclick="showScreen('shop')"><span class="ic2">🛍️</span>חנות</button>
@@ -541,6 +563,27 @@ input,select,textarea{font-family:var(--font-b);}
 <section class="screen" id="screen-shop">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🛍️ חנות</h2><span class="pill">🪙 <span id="shop-coins">0</span></span></div>
   <div id="shop-list"></div>
+</section>
+
+<section class="screen" id="screen-games-hub">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🎮 משחקים</h2><div style="width:38px"></div></div>
+  <div class="games-grid" id="games-grid"></div>
+</section>
+
+<section class="screen" id="screen-arcade-game">
+  <div class="topbar"><button class="back-btn" onclick="exitArcadeGame()">→</button><h2 id="arcade-title">משחק</h2><div style="width:38px"></div></div>
+  <div class="arcade-banner" id="arcade-banner">
+    <span class="ab-emoji" id="arcade-emoji">🎮</span>
+    <span class="ab-title" id="arcade-name"></span>
+  </div>
+  <div class="arcade-header">
+    <span class="arcade-lives" id="arcade-lives"></span>
+    <span class="pill" id="arcade-score-pill">0 XP</span>
+  </div>
+  <div class="arcade-progress-label"><span id="arcade-progress-txt">0/8</span><span id="arcade-unit-label"></span></div>
+  <div class="progress-outer" style="margin-bottom:10px;"><div class="progress-inner" id="arcade-progress-bar" style="width:0%"></div></div>
+  <div class="arcade-flavor" id="arcade-flavor"></div>
+  <div id="arcade-question-area"></div>
 </section>
 
 <section class="screen" id="screen-settings">
@@ -680,6 +723,22 @@ function topicsFor(subjId){ return TOPICS_BY_SUBJECT[subjId] || TOPICS_BY_SUBJEC
 
 const AVATAR_EMOJIS = ['🦊','🐼','🐧','🦁','🐱','🐰','🐸','🦄','🐯','🐨','🦉','🐙'];
 const AVATAR_COLORS = ['#2a2f5c','#5c2a4a','#2a5c4f','#5c4a2a','#3a2a5c','#5c2a2a'];
+const GAMES = [
+  {id:'race', name:'מרוץ הידע', emoji:'🏎️', grad:'linear-gradient(160deg,#ff6b35,#f2b84b)', unit:'מהירות', win:8, correctFlavor:'המכונית מאיצה קדימה! 🏁', wrongFlavor:'איטיים לרגע... אל תוותרו!'},
+  {id:'island', name:'אי המטמון החכם', emoji:'🏝️', grad:'linear-gradient(160deg,#0d9488,#2dd4bf)', unit:'תחנות', win:8, correctFlavor:'מתקדמים לתחנה הבאה במפה! 🗺️', wrongFlavor:'תחנה חסומה... נסו/י שוב'},
+  {id:'pyramid', name:'בריחה מהפירמידה', emoji:'🔺', grad:'linear-gradient(160deg,#b8860b,#f2b84b)', unit:'דלתות', win:8, correctFlavor:'דלת נפתחת! 🚪', wrongFlavor:'הדלת נשארה נעולה...'},
+  {id:'space', name:'מלחמת החלל', emoji:'🚀', grad:'linear-gradient(160deg,#1e1b4b,#6d28d9)', unit:'אויבים', win:8, correctFlavor:'ספינת אויב הושמדה! 💥', wrongFlavor:'פגיעה בספינה שלכם!'},
+  {id:'wizard', name:'ממלכת הקוסמים', emoji:'🧙', grad:'linear-gradient(160deg,#4c1d95,#8b7cf6)', unit:'לחשים', win:8, correctFlavor:'הלחש הצליח! ✨', wrongFlavor:'הלחש התפוגג...'},
+  {id:'zoo', name:'גן החיות החכם', emoji:'🦁', grad:'linear-gradient(160deg,#14532d,#22c55e)', unit:'חיות', win:8, correctFlavor:'חיה ניצלה! 🐾', wrongFlavor:'החיה עדיין מחכה לעזרה...'},
+  {id:'dragon', name:'צייד הדרקונים', emoji:'🐉', grad:'linear-gradient(160deg,#7c2d12,#f97316)', unit:'פריטים', win:8, correctFlavor:'אספתם פריט נדיר! ⚔️', wrongFlavor:'הפריט נעלם...'},
+  {id:'maze', name:'המבוך האינסופי', emoji:'🌀', grad:'linear-gradient(160deg,#134e4a,#0891b2)', unit:'צעדים', win:8, correctFlavor:'מוצאים את הדרך הלאה! 🧭', wrongFlavor:'מבוי סתום...'},
+  {id:'city', name:'בוני הערים', emoji:'🏙️', grad:'linear-gradient(160deg,#1e3a5f,#64748b)', unit:'משאבים', win:8, correctFlavor:'משאב חדש לבנייה! 🧱', wrongFlavor:'המשאב אזל הפעם...'},
+  {id:'timerace', name:'מרוץ נגד הזמן', emoji:'⏱️', grad:'linear-gradient(160deg,#991b1b,#f2b84b)', unit:'ניקוד', win:8, correctFlavor:'מטפסים בטבלה! 📈', wrongFlavor:'הזמן רץ...'},
+  {id:'pizza', name:'מלך הפיצה', emoji:'🍕', grad:'linear-gradient(160deg,#b91c1c,#facc15)', unit:'הזמנות', win:8, correctFlavor:'הזמנה הושלמה! 🍕', wrongFlavor:'ההזמנה יצאה לא נכון...'},
+  {id:'zombie', name:'כוכב הזומבים', emoji:'🧟', grad:'linear-gradient(160deg,#1a2e1a,#4b5563)', unit:'גלים', win:6, correctFlavor:'גל זומבים נעצר! 🛡️', wrongFlavor:'זומבי פרץ פנימה!'},
+  {id:'escape', name:'חדר הבריחה הסודי', emoji:'🔐', grad:'linear-gradient(160deg,#312e81,#7c3aed)', unit:'מנעולים', win:8, correctFlavor:'מנעול נפתח! 🔓', wrongFlavor:'הצופן שגוי...'},
+  {id:'mars', name:'מסע למאדים', emoji:'🚀', grad:'linear-gradient(160deg,#7f1d1d,#f97316)', unit:'משימות', win:8, correctFlavor:'משימה הושלמה במושבה! 🪐', wrongFlavor:'המשימה נכשלה, ננסה שוב...'},
+];
 const SHOP_ITEMS = [
   {id:'frame_gold', name:'מסגרת זהב', ic:'🟡', price:50},
   {id:'frame_fire', name:'מסגרת אש', ic:'🔥', price:80},
@@ -774,6 +833,7 @@ function showScreen(name){
   if(name==='achievements') renderAchievements();
   if(name==='avatar') renderAvatarScreen();
   if(name==='shop') renderShop();
+  if(name==='games-hub') renderGamesHub();
   if(name==='mistakes') renderMistakes();
   if(name==='statistics') renderStatistics();
   if(name==='parent-dash') renderParentDash();
@@ -1628,6 +1688,138 @@ function hexToRgbStr(hex){
   const rgb=getComputedStyle(d).backgroundColor; document.body.removeChild(d); return rgb;
 }
 function saveAvatar(){ saveState(); showToast('האווטאר נשמר! ✅'); showScreen('settings'); }
+
+/* =========================================================
+   GAMES HUB / ARCADE ENGINE
+========================================================= */
+function renderGamesHub(){
+  const grid = document.getElementById('games-grid');
+  grid.innerHTML = GAMES.map(g=>`
+    <button class="game-tile" style="background:${g.grad};" onclick="openArcadeGame('${g.id}')">
+      <span class="gt-emoji">${g.emoji}</span>
+      <span class="gt-caption">${g.name}</span>
+    </button>`).join('');
+}
+let arcadeState = null;
+function openArcadeGame(gameId){
+  const game = GAMES.find(g=>g.id===gameId);
+  if(!game) return;
+  arcadeState = {game, progress:0, lives:3, xpEarned:0, ended:false};
+  document.getElementById('arcade-title').textContent = game.name;
+  document.getElementById('arcade-banner').style.background = game.grad;
+  document.getElementById('arcade-emoji').textContent = game.emoji;
+  document.getElementById('arcade-name').textContent = game.name;
+  document.getElementById('arcade-unit-label').textContent = game.unit;
+  document.getElementById('arcade-flavor').textContent = '';
+  updateArcadeHUD();
+  showScreen('arcade-game');
+  loadArcadeQuestion();
+}
+function updateArcadeHUD(){
+  const {game, progress, lives, xpEarned} = arcadeState;
+  document.getElementById('arcade-lives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(3-lives);
+  document.getElementById('arcade-score-pill').textContent = xpEarned+' XP';
+  document.getElementById('arcade-progress-txt').textContent = progress+'/'+game.win;
+  document.getElementById('arcade-progress-bar').style.width = Math.round(100*progress/game.win)+'%';
+}
+async function loadArcadeQuestion(){
+  const area = document.getElementById('arcade-question-area');
+  area.innerHTML = `<div class="loader"><div class="spin-ic"></div>מכין שאלה...</div>`;
+  try{
+    const subj = currentSubject?.name || 'ידע כללי (מגוון מקצועות)';
+    const topic = currentTopic || 'שאלות כלליות מעניינות ומגוונות';
+    const q = await generateQuestion(subj, topic, 'בינוני');
+    arcadeState.currentQ = q;
+    area.innerHTML = `
+      <div class="q-card">
+        <div class="q-text">${q.question}</div>
+        <div id="arcade-opts-wrap">
+          ${q.options.map((o,i)=>`<button class="opt-btn" onclick="answerArcade(${i})">${o}</button>`).join('')}
+        </div>
+        <div class="explain-box" id="arcade-explain">${q.explanation||''}</div>
+      </div>`;
+  }catch(e){
+    area.innerHTML = `
+      <div class="card" style="border-color:var(--coral);">
+        <b style="color:var(--coral);">⚠️ לא הצלחתי לטעון שאלה</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">${e.message}</p>
+        <button class="btn btn-teal btn-block" onclick="loadArcadeQuestion()">נסה שוב</button>
+      </div>`;
+  }
+}
+function answerArcade(i){
+  if(!arcadeState || arcadeState.ended) return;
+  const {game, currentQ} = arcadeState;
+  const correct = i === currentQ.correctIndex;
+  document.querySelectorAll('#arcade-opts-wrap .opt-btn').forEach((b,idx)=>{
+    b.classList.add('disabled');
+    if(idx===currentQ.correctIndex) b.classList.add('correct');
+    else if(idx===i) b.classList.add('wrong');
+  });
+  document.getElementById('arcade-explain').classList.add('show');
+  const flavorEl = document.getElementById('arcade-flavor');
+  if(correct){
+    arcadeState.progress++;
+    arcadeState.xpEarned += 4;
+    addXP(4); addCoins(1);
+    flavorEl.textContent = game.correctFlavor;
+    flavorEl.style.color = 'var(--teal)';
+  } else {
+    arcadeState.lives--;
+    flavorEl.textContent = game.wrongFlavor;
+    flavorEl.style.color = 'var(--coral)';
+  }
+  updateArcadeHUD();
+  markActivity(1);
+
+  setTimeout(()=>{
+    if(arcadeState.lives<=0){
+      endArcadeGame(false);
+    } else if(arcadeState.progress>=game.win){
+      endArcadeGame(true);
+    } else {
+      loadArcadeQuestion();
+    }
+  }, 1400);
+}
+function endArcadeGame(won){
+  arcadeState.ended = true;
+  const {game, xpEarned} = arcadeState;
+  const area = document.getElementById('arcade-question-area');
+  if(won){
+    const bonus = 20;
+    addXP(bonus); addCoins(10);
+    checkAchievements();
+    area.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-size:40px; margin-bottom:8px;">🏆</div>
+        <b style="font-size:16px;">ניצחת ב-${game.name}!</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">סה"כ הרווחת ${xpEarned+bonus} XP (כולל בונוס ניצחון)</p>
+        <div class="grid2">
+          <button class="btn btn-teal" onclick="openArcadeGame('${game.id}')">🔁 שחק שוב</button>
+          <button class="btn btn-gold" onclick="showScreen('games-hub')">🎮 למשחקים</button>
+        </div>
+      </div>`;
+  } else {
+    area.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-size:40px; margin-bottom:8px;">💔</div>
+        <b style="font-size:16px;">נגמרו החיים ב-${game.name}</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">הרווחת ${xpEarned} XP בכל זאת — נסה/י שוב!</p>
+        <div class="grid2">
+          <button class="btn btn-teal" onclick="openArcadeGame('${game.id}')">🔁 נסה שוב</button>
+          <button class="btn btn-gold" onclick="showScreen('games-hub')">🎮 למשחקים</button>
+        </div>
+      </div>`;
+  }
+  document.getElementById('arcade-flavor').textContent = '';
+}
+function exitArcadeGame(){
+  if(arcadeState && !arcadeState.ended && arcadeState.progress>0){
+    if(!confirm('לצאת מהמשחק? ההתקדמות במשחק הזה תאבד (ה-XP שכבר הרווחת נשמר).')) return;
+  }
+  showScreen('games-hub');
+}
 
 function renderShop(){
   document.getElementById('shop-coins').textContent = state.coins;
