@@ -1214,7 +1214,10 @@ function renderMessageBody(text){
       const codeId = 'code_'+Date.now()+'_'+i+'_'+Math.floor(Math.random()*10000);
       html += `<div class="code-block-wrap"><pre id="${codeId}">${part}</pre><button class="code-copy-btn" onclick="copyCodeBlock('${codeId}')">📋<span class="code-copy-tip">העתק</span></button></div>`;
     } else if(part){
-      html += `<span>${part}</span>`;
+      // מסיר גרשיים בודדות/משולשות שנשארו בטעות בטקסט הרגיל (למשל אם ה-AI לא סגר בלוק כמו שצריך),
+      // כדי שאף פעם לא יופיעו ``` גולמיים למשתמש.
+      const clean = part.replace(/`+/g, '');
+      if(clean) html += `<span>${clean}</span>`;
     }
   });
   return html;
