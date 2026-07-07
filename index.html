@@ -141,7 +141,6 @@ input,select,textarea{font-family:var(--font-b);}
   width:58px; height:58px; border-radius:18px; display:flex; align-items:center; justify-content:center;
   font-size:28px; border:2px solid var(--gold); position:relative; flex-shrink:0;
 }
-.lvl-badge{position:absolute; bottom:-6px; left:-6px; background:var(--gold); color:#22160a; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;}
 .home-header .greet{flex:1;}
 .home-header .greet h2{font-size:17px; margin-bottom:2px;}
 .stat-row{display:flex; gap:8px;}
@@ -396,13 +395,12 @@ input,select,textarea{font-family:var(--font-b);}
   </div>
 
   <div class="home-header">
-    <div class="avatar-circle" id="home-avatar" style="background:#2a2f5c;"><span id="home-avatar-emoji">🦊</span><span class="lvl-badge" id="home-level">1</span></div>
+    <div class="avatar-circle" id="home-avatar" style="background:#2a2f5c;"><span id="home-avatar-emoji">🦊</span></div>
     <div class="greet">
       <h2 id="home-greet">שלום!</h2>
       <div class="stat-row">
         <span class="stat-chip">🔥 <span id="home-streak">0</span> ימים</span>
         <span class="stat-chip">🪙 <span id="home-coins">0</span></span>
-        <span class="stat-chip">⭐ <span id="home-xp">0</span> XP</span>
       </div>
     </div>
     <div class="ring-wrap">
@@ -533,7 +531,7 @@ input,select,textarea{font-family:var(--font-b);}
   </div>
   <div class="grid2" style="margin-bottom:16px;">
     <div class="card" style="text-align:center;"><b id="qr-correct">0</b><div style="font-size:11px; color:var(--text-dim);">תשובות נכונות</div></div>
-    <div class="card" style="text-align:center;"><b id="qr-xp">0</b><div style="font-size:11px; color:var(--text-dim);">XP שהתקבל</div></div>
+    <div class="card" style="text-align:center;"><b id="qr-coins">0</b><div style="font-size:11px; color:var(--text-dim);">מטבעות שהתקבלו</div></div>
   </div>
   <div class="section-title">📋 סקירת שאלות</div>
   <div id="qr-review"></div>
@@ -578,7 +576,7 @@ input,select,textarea{font-family:var(--font-b);}
   </div>
   <div class="arcade-header">
     <span class="arcade-lives" id="arcade-lives"></span>
-    <span class="pill" id="arcade-score-pill">0 XP</span>
+    <span class="pill" id="arcade-score-pill">0 מטבעות</span>
   </div>
   <div class="arcade-progress-label"><span id="arcade-progress-txt">0/8</span><span id="arcade-unit-label"></span></div>
   <div class="progress-outer" style="margin-bottom:10px;"><div class="progress-inner" id="arcade-progress-bar" style="width:0%"></div></div>
@@ -648,7 +646,7 @@ input,select,textarea{font-family:var(--font-b);}
   <div class="card" style="margin-bottom:14px;">
     <div class="stat-block"><span>זמן למידה היום</span><b id="pd-today">0 דק'</b></div>
     <div class="stat-block"><span>רצף ימים</span><b id="pd-streak">0</b></div>
-    <div class="stat-block"><span>רמה נוכחית</span><b id="pd-level">1</b></div>
+    <div class="stat-block"><span>מטבעות שנצברו</span><b id="pd-coins">0</b></div>
     <div class="stat-block"><span>ציון ממוצע בתרגולים</span><b id="pd-avg">0%</b></div>
   </div>
   <div class="section-title">📉 נושאים חלשים לחיזוק</div>
@@ -751,8 +749,8 @@ const BADGES = [
   {id:'first_lesson', name:'הצעד הראשון', desc:'סיימת שיעור ראשון', cond:s=>s.stats.totalPractices>=1, ic:'🥇'},
   {id:'streak3', name:'רצף של 3', desc:'3 ימי למידה ברצף', cond:s=>s.streak>=3, ic:'🔥'},
   {id:'streak7', name:'שבוע שלם', desc:'7 ימי למידה ברצף', cond:s=>s.streak>=7, ic:'🏅'},
-  {id:'xp100', name:'אלוף ה-XP', desc:'צברת 100 נקודות נסיון', cond:s=>s.xp>=100, ic:'⭐'},
-  {id:'xp500', name:'מאסטר למידה', desc:'צברת 500 נקודות נסיון', cond:s=>s.xp>=500, ic:'🌟'},
+  {id:'coins50', name:'חוסך מתחיל', desc:'צברת 50 מטבעות', cond:s=>s.coinsEarnedTotal>=50, ic:'⭐'},
+  {id:'coins500', name:'מאסטר למידה', desc:'צברת 500 מטבעות', cond:s=>s.coinsEarnedTotal>=500, ic:'🌟'},
   {id:'quiz5', name:'עבר את המבחן', desc:'סיימת 5 מבחנים', cond:s=>s.stats.quizzesTaken>=5, ic:'📝'},
   {id:'perfect', name:'ציון מושלם', desc:'100% במבחן', cond:s=>s.stats.hadPerfectQuiz, ic:'💯'},
   {id:'coins200', name:'עשיר קטן', desc:'צברת 200 מטבעות', cond:s=>s.coinsEarnedTotal>=200, ic:'💰'},
@@ -772,7 +770,7 @@ let state = null;
 function defaultState(){
   return {
     profile:{name:'', password:'', parentCode:'', age:'', grade:'', lang:'he', country:'', curriculum:'', avatar:'🦊', avatarColor:'#2a2f5c'},
-    level:1, xp:0, coins:20, streak:0, lastActiveDate:null,
+    coins:20, streak:0, lastActiveDate:null,
     dailyGoal:30, todayMinutes:0, todayDate:null,
     blockGames:false,
     owned:[], parentMessages:[],
@@ -970,9 +968,9 @@ function ensureDailyReset(){
   }
   if(state.dailyMissionsDate !== t){
     state.dailyMissions = [
-      {text:'תרגל/י 5 שאלות', target:5, progress:0, xp:15, key:'practice5'},
-      {text:'למד/י נושא חדש', target:1, progress:0, xp:10, key:'newTopic'},
-      {text:'סיים/י מבחן אחד', target:1, progress:0, xp:20, key:'quiz1'},
+      {text:'תרגל/י 5 שאלות', target:5, progress:0, coins:15, key:'practice5'},
+      {text:'למד/י נושא חדש', target:1, progress:0, coins:10, key:'newTopic'},
+      {text:'סיים/י מבחן אחד', target:1, progress:0, coins:20, key:'quiz1'},
     ];
     state.dailyMissionsDate = t;
   }
@@ -994,23 +992,12 @@ function progressMission(key, amount=1){
   const m = state.dailyMissions.find(x=>x.key===key);
   if(m && m.progress < m.target){
     m.progress = Math.min(m.target, m.progress+amount);
-    if(m.progress>=m.target){ addXP(m.xp); addCoins(5); showToast('משימה יומית הושלמה! +'+m.xp+' XP'); }
+    if(m.progress>=m.target){ addCoins(m.coins); showToast('משימה יומית הושלמה! +'+m.coins+' מטבעות 🪙'); }
     saveState();
   }
 }
 
-function xpForLevel(lvl){ return lvl*80; }
-function addXP(amount){
-  state.xp += amount;
-  while(state.xp >= xpForLevel(state.level)){
-    state.xp -= xpForLevel(state.level);
-    state.level += 1;
-    showToast('🎉 עלית לרמה '+state.level+'!');
-  }
-  checkAchievements();
-  saveState();
-}
-function addCoins(amount){ state.coins += amount; state.coinsEarnedTotal += amount; saveState(); }
+function addCoins(amount){ state.coins += amount; state.coinsEarnedTotal += amount; checkAchievements(); saveState(); }
 function checkAchievements(){
   BADGES.forEach(b=>{
     if(!state.achievementsUnlocked.includes(b.id) && b.cond(state)){
@@ -1026,10 +1013,8 @@ function renderHome(){
   document.getElementById('home-greet').textContent = 'שלום, '+(state.profile.name||'תלמיד/ה')+' 👋';
   document.getElementById('home-avatar-emoji').textContent = state.profile.avatar;
   document.getElementById('home-avatar').style.background = state.profile.avatarColor;
-  document.getElementById('home-level').textContent = state.level;
   document.getElementById('home-streak').textContent = state.streak;
   document.getElementById('home-coins').textContent = state.coins;
-  document.getElementById('home-xp').textContent = state.xp;
 
   const pct = Math.min(100, Math.round((state.todayMinutes/state.dailyGoal)*100));
   document.getElementById('goal-txt').textContent = pct+'%';
@@ -1041,7 +1026,7 @@ function renderHome(){
     <div class="mission-item">
       <div class="mission-check ${m.progress>=m.target?'done':''}">${m.progress>=m.target?'✓':''}</div>
       <div class="mtext">${m.text} (${m.progress}/${m.target})</div>
-      <div class="mxp">+${m.xp} XP</div>
+      <div class="mxp">+${m.coins} 🪙</div>
     </div>`).join('');
 
   document.getElementById('daily-tip').textContent = '💡 ' + DAILY_TIPS[new Date().getDate()%DAILY_TIPS.length];
@@ -1499,7 +1484,7 @@ function selectAnswer(i, isQuiz){
   document.getElementById('explain-box').classList.add('show');
   const correct = i===q.correctIndex;
   updateSubjectProgress(currentSubject?.id||'general', correct);
-  if(correct){ addXP(5); addCoins(1); showToast('נכון מאוד! +5 XP'); }
+  if(correct){ addCoins(5); showToast('נכון מאוד! +5 מטבעות 🪙'); }
   else{
     saveMistake(q);
     showToast('לא נורא, ממשיכים ללמוד 💪');
@@ -1610,8 +1595,8 @@ function confirmExitQuiz(){
 function finishQuiz(){
   const total = quizState.questions.length;
   const pct = Math.round((quizState.correct/total)*100);
-  const xpGain = quizState.correct*10 + (pct===100?20:0);
-  addXP(xpGain); addCoins(Math.round(xpGain/2));
+  const coinsGain = quizState.correct*10 + (pct===100?20:0);
+  addCoins(coinsGain);
   state.stats.quizzesTaken += 1;
   if(pct===100) state.stats.hadPerfectQuiz = true;
   progressMission('quiz1',1);
@@ -1622,7 +1607,7 @@ function finishQuiz(){
   document.getElementById('qr-score').textContent = pct+'%';
   document.getElementById('qr-sub').textContent = quizState.subj.name+' • '+total+' שאלות';
   document.getElementById('qr-correct').textContent = quizState.correct+'/'+total;
-  document.getElementById('qr-xp').textContent = '+'+xpGain;
+  document.getElementById('qr-coins').textContent = '+'+coinsGain;
   document.getElementById('qr-review').innerHTML = quizState.answers.map((a,i)=>`
     <div class="mistake-card" style="border-inline-start-color:${a.correct?'var(--teal)':'var(--coral)'}">
       <div style="font-size:13px; font-weight:700; margin-bottom:4px;">${i+1}. ${a.q.question}</div>
@@ -1704,7 +1689,7 @@ let arcadeState = null;
 function openArcadeGame(gameId){
   const game = GAMES.find(g=>g.id===gameId);
   if(!game) return;
-  arcadeState = {game, progress:0, lives:3, xpEarned:0, ended:false};
+  arcadeState = {game, progress:0, lives:3, coinsEarned:0, ended:false};
   document.getElementById('arcade-title').textContent = game.name;
   document.getElementById('arcade-banner').style.background = game.grad;
   document.getElementById('arcade-emoji').textContent = game.emoji;
@@ -1716,9 +1701,9 @@ function openArcadeGame(gameId){
   loadArcadeQuestion();
 }
 function updateArcadeHUD(){
-  const {game, progress, lives, xpEarned} = arcadeState;
+  const {game, progress, lives, coinsEarned} = arcadeState;
   document.getElementById('arcade-lives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(3-lives);
-  document.getElementById('arcade-score-pill').textContent = xpEarned+' XP';
+  document.getElementById('arcade-score-pill').textContent = coinsEarned+' מטבעות';
   document.getElementById('arcade-progress-txt').textContent = progress+'/'+game.win;
   document.getElementById('arcade-progress-bar').style.width = Math.round(100*progress/game.win)+'%';
 }
@@ -1760,8 +1745,8 @@ function answerArcade(i){
   const flavorEl = document.getElementById('arcade-flavor');
   if(correct){
     arcadeState.progress++;
-    arcadeState.xpEarned += 4;
-    addXP(4); addCoins(1);
+    arcadeState.coinsEarned += 4;
+    addCoins(4);
     flavorEl.textContent = game.correctFlavor;
     flavorEl.style.color = 'var(--teal)';
   } else {
@@ -1784,17 +1769,16 @@ function answerArcade(i){
 }
 function endArcadeGame(won){
   arcadeState.ended = true;
-  const {game, xpEarned} = arcadeState;
+  const {game, coinsEarned} = arcadeState;
   const area = document.getElementById('arcade-question-area');
   if(won){
     const bonus = 20;
-    addXP(bonus); addCoins(10);
-    checkAchievements();
+    addCoins(bonus);
     area.innerHTML = `
       <div class="card" style="text-align:center;">
         <div style="font-size:40px; margin-bottom:8px;">🏆</div>
         <b style="font-size:16px;">ניצחת ב-${game.name}!</b>
-        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">סה"כ הרווחת ${xpEarned+bonus} XP (כולל בונוס ניצחון)</p>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">סה"כ הרווחת ${coinsEarned+bonus} מטבעות (כולל בונוס ניצחון)</p>
         <div class="grid2">
           <button class="btn btn-teal" onclick="openArcadeGame('${game.id}')">🔁 שחק שוב</button>
           <button class="btn btn-gold" onclick="showScreen('games-hub')">🎮 למשחקים</button>
@@ -1805,7 +1789,7 @@ function endArcadeGame(won){
       <div class="card" style="text-align:center;">
         <div style="font-size:40px; margin-bottom:8px;">💔</div>
         <b style="font-size:16px;">נגמרו החיים ב-${game.name}</b>
-        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">הרווחת ${xpEarned} XP בכל זאת — נסה/י שוב!</p>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">הרווחת ${coinsEarned} מטבעות בכל זאת — נסה/י שוב!</p>
         <div class="grid2">
           <button class="btn btn-teal" onclick="openArcadeGame('${game.id}')">🔁 נסה שוב</button>
           <button class="btn btn-gold" onclick="showScreen('games-hub')">🎮 למשחקים</button>
@@ -1816,7 +1800,7 @@ function endArcadeGame(won){
 }
 function exitArcadeGame(){
   if(arcadeState && !arcadeState.ended && arcadeState.progress>0){
-    if(!confirm('לצאת מהמשחק? ההתקדמות במשחק הזה תאבד (ה-XP שכבר הרווחת נשמר).')) return;
+    if(!confirm('לצאת מהמשחק? ההתקדמות במשחק הזה תאבד (המטבעות שכבר הרווחת נשמרו).')) return;
   }
   showScreen('games-hub');
 }
@@ -1895,7 +1879,7 @@ function requestParentAccess(){
 function renderParentDash(){
   document.getElementById('pd-today').textContent = state.todayMinutes+' דק\'';
   document.getElementById('pd-streak').textContent = state.streak;
-  document.getElementById('pd-level').textContent = state.level;
+  document.getElementById('pd-coins').textContent = state.coins;
   const entries = Object.entries(state.stats.subjectProgress);
   const avg = entries.length ? Math.round(entries.reduce((a,[,p])=>a+(p.correct/p.total),0)/entries.length*100) : 0;
   document.getElementById('pd-avg').textContent = avg+'%';
