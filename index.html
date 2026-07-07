@@ -65,7 +65,6 @@ h1,h2,h3{font-family:var(--font-d);}
 button{font-family:var(--font-b); cursor:pointer; border:none;}
 input,select,textarea{font-family:var(--font-b);}
 
-/* ---------- generic components ---------- */
 .btn{
   padding:14px 20px; border-radius:14px; font-weight:700; font-size:15px;
   background:var(--panel2); color:var(--text); border:1px solid var(--line);
@@ -106,7 +105,6 @@ input,select,textarea{font-family:var(--font-b);}
 .progress-outer{height:10px; background:var(--panel2); border-radius:100px; overflow:hidden; border:1px solid var(--line);}
 .progress-inner{height:100%; background:linear-gradient(90deg,var(--gold),var(--coral)); border-radius:100px; transition:width .5s;}
 
-/* ---------- bottom nav ---------- */
 .bottomnav{
   position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:520px;
   background:var(--panel); border-top:1px solid var(--line); display:flex; z-index:10;
@@ -116,7 +114,6 @@ input,select,textarea{font-family:var(--font-b);}
 .navbtn.active{color:var(--gold);}
 .navbtn .ic{font-size:20px;}
 
-/* ---------- splash ---------- */
 #screen-splash{align-items:center; justify-content:center; text-align:center; padding:40px 24px;}
 .logo-orb{
   width:96px; height:96px; border-radius:28px; margin:0 auto 18px;
@@ -132,7 +129,6 @@ input,select,textarea{font-family:var(--font-b);}
 .auth-stack{width:100%; display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
 .auth-btn{background:var(--panel); border:1px solid var(--line); color:var(--text); font-weight:600; font-size:14px;}
 
-/* ---------- onboarding ---------- */
 .step-dots{display:flex; gap:6px; justify-content:center; margin-bottom:20px;}
 .step-dots span{width:8px; height:8px; border-radius:50%; background:var(--line);}
 .step-dots span.on{background:var(--gold);}
@@ -140,7 +136,6 @@ input,select,textarea{font-family:var(--font-b);}
 .emoji-opt{width:52px; height:52px; border-radius:16px; background:var(--panel2); border:2px solid transparent; font-size:26px; display:flex; align-items:center; justify-content:center;}
 .emoji-opt.sel{border-color:var(--gold);}
 
-/* ---------- home ---------- */
 .home-header{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
 .avatar-circle{
   width:58px; height:58px; border-radius:18px; display:flex; align-items:center; justify-content:center;
@@ -166,7 +161,6 @@ input,select,textarea{font-family:var(--font-b);}
 .tip-card{background:linear-gradient(135deg, rgba(139,124,246,.18), rgba(45,212,191,.1)); border:1px solid var(--line);}
 .chart-canvas{width:100%; height:110px; display:block;}
 
-/* ---------- subjects ---------- */
 .subject-tile{
   background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 8px; text-align:center;
   display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -178,7 +172,6 @@ input,select,textarea{font-family:var(--font-b);}
 .search-box{display:flex; align-items:center; gap:8px; background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:10px 14px; margin-bottom:14px;}
 .search-box input{background:none; border:none; outline:none; color:var(--text); flex:1; font-size:14px;}
 
-/* ---------- topic ---------- */
 .topic-row{display:flex; align-items:center; justify-content:space-between; padding:14px; border-radius:14px; background:var(--panel); border:1px solid var(--line); margin-bottom:10px;}
 .topic-row .tname{font-weight:700; font-size:14px;}
 .topic-row .tsub{font-size:11px; color:var(--text-dim);}
@@ -186,17 +179,19 @@ input,select,textarea{font-family:var(--font-b);}
 .diff-tab{padding:8px 14px; border-radius:100px; background:var(--panel2); border:1px solid var(--line); font-size:12.5px; font-weight:700; color:var(--text-dim); white-space:nowrap;}
 .diff-tab.sel{background:var(--gold); color:#22160a; border-color:var(--gold);}
 
-/* ---------- chat ---------- */
 #screen-chat{padding-bottom:150px;}
 .chat-log{display:flex; flex-direction:column; gap:12px; flex:1; padding:6px 2px;}
-.msg{max-width:82%; padding:12px 14px; border-radius:16px; font-size:14px; line-height:1.6; white-space:pre-wrap;}
+.msg{padding:12px 14px; border-radius:16px; font-size:14px; line-height:1.6; white-space:pre-wrap;}
 .msg.ai{align-self:flex-start; background:var(--panel); border:1px solid var(--line); border-bottom-left-radius:4px;}
 .msg.user{align-self:flex-end; background:linear-gradient(135deg,var(--violet),#6a5acd); color:#fff; border-bottom-right-radius:4px;}
 .quick-actions{display:flex; gap:8px; overflow-x:auto; padding:10px 2px; margin-bottom:6px;}
 .quick-actions button{white-space:nowrap; background:var(--panel2); border:1px solid var(--line); color:var(--text-dim); border-radius:100px; padding:8px 14px; font-size:12px; font-weight:700;}
-.chat-input-bar{
+.chat-footer{
   position:fixed; bottom:64px; left:50%; transform:translateX(-50%); width:100%; max-width:520px;
-  display:flex; gap:8px; padding:10px 16px; background:var(--bg); border-top:1px solid var(--line);
+  background:var(--bg); z-index:9;
+}
+.chat-input-bar{
+  display:flex; gap:8px; padding:10px 16px; border-top:1px solid var(--line);
 }
 .chat-input-bar input{flex:1; padding:12px 16px; border-radius:100px; background:var(--panel2); border:1px solid var(--line); color:var(--text);}
 .chat-input-bar button{width:46px; height:46px; border-radius:50%; background:var(--gold); color:#22160a; font-size:18px; flex-shrink:0;}
@@ -204,7 +199,6 @@ input,select,textarea{font-family:var(--font-b);}
 .typing-dots span:nth-child(2){animation-delay:.2s;} .typing-dots span:nth-child(3){animation-delay:.4s;}
 @keyframes blink{0%,80%,100%{opacity:.2} 40%{opacity:1}}
 
-/* ---------- practice / quiz ---------- */
 .q-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:16px;}
 .q-meta{display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-bottom:10px;}
 .q-text{font-size:16px; font-weight:700; line-height:1.6; margin-bottom:16px;}
@@ -222,12 +216,10 @@ input,select,textarea{font-family:var(--font-b);}
 .spin-ic{width:22px; height:22px; border:3px solid var(--line); border-top-color:var(--gold); border-radius:50%; animation:sp .8s linear infinite;}
 @keyframes sp{to{transform:rotate(360deg)}}
 
-/* ---------- results ---------- */
 .result-hero{text-align:center; padding:20px 0;}
 .result-hero .score{font-size:52px; font-family:var(--font-d); font-weight:800; color:var(--gold);}
 .result-hero p{color:var(--text-dim); font-size:13px;}
 
-/* ---------- achievements ---------- */
 .badge-card{display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px;}
 .badge-ic{width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; background:var(--panel2); flex-shrink:0;}
 .badge-card.unlocked .badge-ic{background:linear-gradient(135deg,var(--gold),#e0982b);}
@@ -235,7 +227,6 @@ input,select,textarea{font-family:var(--font-b);}
 .badge-name{font-weight:700; font-size:14px;}
 .badge-desc{font-size:11.5px; color:var(--text-dim);}
 
-/* ---------- avatar/shop ---------- */
 .avatar-preview{width:120px; height:120px; border-radius:32px; margin:10px auto 20px; display:flex; align-items:center; justify-content:center; font-size:56px; border:3px solid var(--gold); position:relative;}
 .color-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:16px;}
 .color-dot{width:34px; height:34px; border-radius:50%; border:3px solid transparent;}
@@ -247,10 +238,8 @@ input,select,textarea{font-family:var(--font-b);}
 .buy-btn{background:var(--gold); color:#22160a; font-weight:800; font-size:12px; padding:8px 14px; border-radius:10px;}
 .buy-btn:disabled{background:var(--panel2); color:var(--text-dim);}
 
-/* ---------- mistakes ---------- */
 .mistake-card{background:var(--panel); border:1px solid var(--line); border-inline-start:3px solid var(--coral); border-radius:14px; padding:12px 14px; margin-bottom:10px;}
 
-/* ---------- parent/teacher ---------- */
 .stat-block{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);}
 .stat-block:last-child{border-bottom:none;}
 .toggle{width:44px; height:26px; border-radius:100px; background:var(--panel2); border:1px solid var(--line); position:relative; flex-shrink:0;}
@@ -258,18 +247,15 @@ input,select,textarea{font-family:var(--font-b);}
 .toggle::after{content:""; position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:.2s;}
 .toggle.on::after{transform:translateX(-18px);}
 
-/* ---------- future tech placeholder ---------- */
 .future-card{background:var(--panel); border:1px dashed var(--line); border-radius:14px; padding:14px; margin-bottom:10px; display:flex; gap:12px; align-items:center;}
 .future-card .fic{font-size:24px;}
 .soon-pill{background:var(--violet); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:100px; margin-inline-start:auto;}
 
-/* toast */
 #toast{position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-60px); background:var(--panel); border:1px solid var(--gold); color:var(--text); padding:12px 20px; border-radius:100px; font-size:13px; font-weight:700; z-index:100; transition:transform .3s; box-shadow:var(--shadow);}
 #toast.show{transform:translateX(-50%) translateY(0);}
 
 ::-webkit-scrollbar{width:0; height:0;}
 
-/* ---------- whiteboard ---------- */
 .wb-modal{
   position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.6);
   display:flex; align-items:center; justify-content:center; padding:14px;
@@ -289,13 +275,36 @@ input,select,textarea{font-family:var(--font-b);}
 .wb-response{margin:0 12px 12px; padding:12px; border-radius:12px; background:var(--panel2); border-inline-start:3px solid var(--teal); font-size:13px; line-height:1.6; max-height:160px; overflow-y:auto; display:none;}
 .wb-response.show{display:block;}
 .wb-under-btn{background:none; border:none; color:var(--teal); font-size:12px; font-weight:700; padding:6px 2px 2px; display:flex; align-items:center; gap:4px; cursor:pointer;}
+
+/* ---------- message menu / code blocks / reply ---------- */
+.msg{user-select:text; -webkit-user-select:text;}
+.msg-row{display:flex; flex-direction:column; max-width:82%;}
+.msg-row.user{align-self:flex-end; align-items:flex-end;}
+.msg-row.ai{align-self:flex-start; align-items:flex-start;}
+.msg-toolbar{display:flex; align-items:center; margin-bottom:2px; align-self:flex-start !important;}
+.msg-menu-wrap{position:relative;}
+.msg-menu-btn{background:none; border:none; color:var(--text-dim); font-size:15px; padding:2px 6px; border-radius:8px; cursor:pointer; line-height:1;}
+.msg-menu-btn:hover{background:var(--panel2);}
+.msg-dropdown{position:absolute; top:22px; left:0; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); z-index:20; min-width:140px; overflow:hidden; display:none;}
+.msg-dropdown.show{display:block;}
+.msg-dropdown button{display:flex; align-items:center; gap:8px; width:100%; text-align:right; padding:9px 12px; background:none; border:none; color:var(--text); font-size:12.5px; font-weight:600;}
+.msg-dropdown button:hover{background:var(--panel2);}
+.code-block-wrap{position:relative; margin:6px 0; background:#11142b; border:1px solid var(--line); border-radius:10px; padding:12px 34px 12px 12px; direction:ltr; text-align:left;}
+.code-block-wrap pre{font-family:monospace; font-size:12.5px; color:#d8e0ff; white-space:pre-wrap; word-break:break-word; margin:0;}
+.code-copy-btn{position:absolute; top:6px; left:6px; background:var(--panel2); border:1px solid var(--line); border-radius:7px; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-dim); cursor:pointer;}
+.code-copy-btn:hover{color:var(--gold);}
+.code-copy-tip{position:absolute; top:-24px; left:0; background:#000; color:#fff; font-size:10px; padding:3px 7px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s;}
+.code-copy-btn:hover .code-copy-tip{opacity:1;}
+.reply-preview{display:flex; align-items:center; gap:8px; background:var(--panel2); border-inline-start:3px solid var(--teal); border-radius:10px; padding:8px 10px; margin:0 16px 6px;}
+.reply-preview .rp-text{flex:1; font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.reply-preview .rp-close{background:none; border:none; color:var(--text-dim); font-size:15px; padding:2px 6px;}
+.msg .quoted-ref{background:rgba(255,255,255,.08); border-inline-start:3px solid rgba(255,255,255,.4); border-radius:8px; padding:6px 8px; font-size:11.5px; opacity:.85; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 </style>
 </head>
 <body>
 <div id="toast"></div>
 <div class="app">
 
-<!-- ================= SPLASH ================= -->
 <section class="screen active" id="screen-splash">
   <div class="logo-orb"><span>🪐</span></div>
   <h1>המורה החכם</h1>
@@ -306,7 +315,6 @@ input,select,textarea{font-family:var(--font-b);}
   </div>
 </section>
 
-<!-- ================= LOGIN ================= -->
 <section class="screen" id="screen-login">
   <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>🔑 התחברות</h2><div style="width:38px"></div></div>
   <div class="field"><label>שם משתמש</label><input id="login-username" placeholder="שם המשתמש שלך"></div>
@@ -315,7 +323,6 @@ input,select,textarea{font-family:var(--font-b);}
   <p style="text-align:center; font-size:12.5px; color:var(--text-dim); margin-top:16px;">אין לך חשבון? <a href="#" onclick="startRegister(); return false;" style="color:var(--teal); font-weight:700;">הרשם/י כאן</a></p>
 </section>
 
-<!-- ================= ONBOARDING / REGISTER ================= -->
 <section class="screen" id="screen-onboard">
   <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>הרשמה</h2><div style="width:38px"></div></div>
   <div class="step-dots"><span id="dot1" class="on"></span><span id="dot2"></span><span id="dot3"></span></div>
@@ -360,7 +367,6 @@ input,select,textarea{font-family:var(--font-b);}
 </section>
 
 
-<!-- ================= HOME ================= -->
 <section class="screen" id="screen-home">
   <div class="topbar">
     <h2 style="font-size:22px;">🪐 המורה החכם</h2>
@@ -415,14 +421,12 @@ input,select,textarea{font-family:var(--font-b);}
   <div class="card" id="parent-msg-card">אין עדיין הודעות מההורים</div>
 </section>
 
-<!-- ================= SUBJECTS ================= -->
 <section class="screen" id="screen-subjects">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>בחירת מקצוע</h2><div style="width:38px"></div></div>
   <div class="search-box">🔍<input id="subject-search" placeholder="חיפוש מקצוע..." oninput="renderSubjects()"></div>
   <div class="grid3" id="subjects-grid"></div>
 </section>
 
-<!-- ================= TOPICS ================= -->
 <section class="screen" id="screen-topics">
   <div class="topbar"><button class="back-btn" onclick="showScreen('subjects')">→</button><h2 id="topics-title">נושאים</h2><div style="width:38px"></div></div>
   <div class="diff-tabs" id="topics-list"></div>
@@ -435,7 +439,6 @@ input,select,textarea{font-family:var(--font-b);}
   </div>
 </section>
 
-<!-- ================= AI CHAT ================= -->
 <section class="screen" id="screen-chat">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🤖 שיחה עם ה-AI</h2><div style="width:38px"></div></div>
   <div class="quick-actions">
@@ -446,13 +449,18 @@ input,select,textarea{font-family:var(--font-b);}
     <button onclick="quickPrompt('תן דוגמא')">💡 תן דוגמא</button>
   </div>
   <div class="chat-log" id="chat-log"></div>
-  <div class="chat-input-bar">
-    <button onclick="sendChat()">↩</button>
-    <input id="chat-input" placeholder="שאל/י כל שאלה..." onkeydown="if(event.key==='Enter')sendChat()">
+  <div class="chat-footer">
+    <div class="reply-preview hidden" id="reply-preview">
+      <span class="rp-text" id="reply-preview-text"></span>
+      <button class="rp-close" onclick="cancelReply()">✕</button>
+    </div>
+    <div class="chat-input-bar">
+      <button onclick="sendChat()">↩</button>
+      <input id="chat-input" placeholder="שאל/י כל שאלה..." onkeydown="if(event.key==='Enter')sendChat()">
+    </div>
   </div>
 </section>
 
-<!-- ================= PRACTICE ================= -->
 <section class="screen" id="screen-practice">
   <div class="topbar"><button class="back-btn" onclick="showScreen('topics')">→</button><h2>✏️ תרגול</h2>
     <button class="back-btn" onclick="showToast('נשמר להמשך אח״כ ✅')">⏸</button>
@@ -460,7 +468,6 @@ input,select,textarea{font-family:var(--font-b);}
   <div id="practice-area"></div>
 </section>
 
-<!-- ================= QUIZ SETUP ================= -->
 <section class="screen" id="screen-quiz-setup">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>📝 בניית מבחן</h2><div style="width:38px"></div></div>
   <div class="field"><label>מקצוע</label><select id="quiz-subject"></select></div>
@@ -476,14 +483,12 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="btn btn-gold btn-block" onclick="startQuiz()">🚀 התחל מבחן</button>
 </section>
 
-<!-- ================= QUIZ ================= -->
 <section class="screen" id="screen-quiz">
   <div class="topbar"><button class="back-btn" onclick="confirmExitQuiz()">→</button><h2 id="quiz-progress-txt">שאלה 1</h2><span class="timer-badge" id="quiz-timer">--</span></div>
   <div class="progress-outer" style="margin-bottom:14px;"><div class="progress-inner" id="quiz-progress-bar" style="width:0%"></div></div>
   <div id="quiz-area"></div>
 </section>
 
-<!-- ================= QUIZ RESULTS ================= -->
 <section class="screen" id="screen-quiz-results">
   <div class="topbar"><h2>תוצאות המבחן</h2></div>
   <div class="result-hero">
@@ -499,19 +504,16 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="btn btn-teal btn-block" style="margin-top:14px;" onclick="showScreen('home')">חזרה למסך הבית</button>
 </section>
 
-<!-- ================= MISTAKES ================= -->
 <section class="screen" id="screen-mistakes">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🔁 חזרה על טעויות</h2><div style="width:38px"></div></div>
   <div id="mistakes-list"></div>
 </section>
 
-<!-- ================= ACHIEVEMENTS ================= -->
 <section class="screen" id="screen-achievements">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🏆 הישגים</h2><div style="width:38px"></div></div>
   <div id="achievements-list"></div>
 </section>
 
-<!-- ================= AVATAR ================= -->
 <section class="screen" id="screen-avatar">
   <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>🦊 עריכת אווטאר</h2><div style="width:38px"></div></div>
   <div class="avatar-preview" id="av-preview">🦊</div>
@@ -522,13 +524,11 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="btn btn-gold btn-block" onclick="saveAvatar()">💾 שמור</button>
 </section>
 
-<!-- ================= SHOP ================= -->
 <section class="screen" id="screen-shop">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🛍️ חנות</h2><span class="pill">🪙 <span id="shop-coins">0</span></span></div>
   <div id="shop-list"></div>
 </section>
 
-<!-- ================= SETTINGS ================= -->
 <section class="screen" id="screen-settings">
   <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>⚙️ הגדרות</h2><div style="width:38px"></div></div>
   <div class="card" style="margin-bottom:12px;">
@@ -551,7 +551,6 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="btn btn-ghost btn-block" onclick="logout()">🚪 התנתקות</button>
 </section>
 
-<!-- ================= EDIT PROFILE ================= -->
 <section class="screen" id="screen-edit-profile">
   <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>✏️ עריכת פרטים אישיים</h2><div style="width:38px"></div></div>
   <div class="field"><label>שם פרטי</label><input id="ep-name" placeholder="שם"></div>
@@ -578,7 +577,6 @@ input,select,textarea{font-family:var(--font-b);}
   <button class="btn btn-gold btn-block" onclick="saveProfileEdits()">💾 שמור שינויים</button>
 </section>
 
-<!-- ================= STATISTICS ================= -->
 <section class="screen" id="screen-statistics">
   <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>📊 סטטיסטיקות</h2><div style="width:38px"></div></div>
   <div class="card" style="margin-bottom:14px;"><b style="font-size:13px;">זמן למידה - 7 ימים אחרונים</b><canvas class="chart-canvas" id="stats-week-chart"></canvas></div>
@@ -588,7 +586,6 @@ input,select,textarea{font-family:var(--font-b);}
   <div class="card" id="stats-forecast"></div>
 </section>
 
-<!-- ================= PARENT DASHBOARD ================= -->
 <section class="screen" id="screen-parent-dash">
   <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>👨‍👩‍👧 לוח בקרה להורים</h2><div style="width:38px"></div></div>
   <div class="card" style="margin-bottom:14px;">
@@ -613,28 +610,10 @@ input,select,textarea{font-family:var(--font-b);}
     <input id="pd-msg" placeholder="כתוב הודעה מעודדת..." style="width:100%; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); margin-bottom:10px;">
     <button class="btn btn-teal btn-block" onclick="sendParentMessage()">שלח הודעה</button>
   </div>
-  <button class="btn btn-ghost btn-block" style="margin-bottom:14px;" onclick="showScreen('teacher-dash')">🧑‍🏫 אזור מורים (ניהול כיתה)</button>
 </section>
 
-<!-- ================= TEACHER DASHBOARD ================= -->
-<section class="screen" id="screen-teacher-dash">
-  <div class="topbar"><button class="back-btn" onclick="showScreen('parent-dash')">→</button><h2>🧑‍🏫 אזור מורים</h2><div style="width:38px"></div></div>
-  <div class="card" style="margin-bottom:14px;">
-    <div class="stat-block"><span>קוד כיתה</span><b id="class-code">—</b></div>
-    <button class="btn btn-gold btn-block" onclick="generateClassCode()">➕ צור כיתה חדשה</button>
-  </div>
-  <div class="section-title">👥 תלמידים (הדגמה)</div>
-  <div class="card" id="teacher-students"></div>
-  <div class="section-title">📝 שיעורי בית</div>
-  <div class="card">
-    <input id="hw-text" placeholder="תיאור שיעורי הבית..." style="width:100%; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); margin-bottom:10px;">
-    <button class="btn btn-teal btn-block" onclick="assignHomework()">שלח לכיתה</button>
-  </div>
-</section>
+</div>
 
-</div><!-- /.app -->
-
-<!-- ================= WHITEBOARD MODAL ================= -->
 <div class="wb-modal hidden" id="wb-modal">
   <div class="wb-panel">
     <div class="wb-header"><b>📝 לוח כתיבה</b><button class="wb-close-btn" onclick="closeWhiteboard()">✕</button></div>
@@ -648,7 +627,6 @@ input,select,textarea{font-family:var(--font-b);}
 </div>
 
 
-<!-- ================= BOTTOM NAV ================= -->
 <div class="bottomnav" id="bottomnav">
   <button class="navbtn active" data-nav="home" onclick="showScreen('home')"><span class="ic">🏠</span>בית</button>
   <button class="navbtn" data-nav="subjects" onclick="showScreen('subjects')"><span class="ic">📚</span>למידה</button>
@@ -658,9 +636,6 @@ input,select,textarea{font-family:var(--font-b);}
 </div>
 
 <script>
-/* =========================================================
-   DATA
-========================================================= */
 const SUBJECTS = [
   {id:'math', name:'מתמטיקה', ic:'🔢'}, {id:'english', name:'אנגלית', ic:'🔤'},
   {id:'hebrew', name:'עברית', ic:'📖'}, {id:'science', name:'מדעים', ic:'🔬'},
@@ -717,14 +692,9 @@ const DAILY_TIPS = [
   'נסה/י לפתור תרגיל לפני שמסתכלים על הפתרון — זה מחזק את הזיכרון.',
 ];
 
-/* =========================================================
-   STATE (multi-account)
-========================================================= */
-// כל החשבונות (ילדים) על המכשיר הזה נשמרים במילון אחד לפי שם משתמש.
-// session קובע מי מחובר כרגע: תלמיד בודד, או הורה/מורה שמחובר לכמה ילדים.
-let accounts = {};   // { username: fullAccountState }
+let accounts = {};
 let session = {mode:null, username:null};
-let state = null;    // תמיד מצביע על חשבון הילד הפעיל כרגע (לתלמיד או לצפייה כהורה)
+let state = null;
 
 function defaultState(){
   return {
@@ -733,15 +703,14 @@ function defaultState(){
     dailyGoal:30, todayMinutes:0, todayDate:null,
     blockGames:false,
     owned:[], parentMessages:[],
-    mistakes:[], // {id,subject,topic,question,options,correct,explanation,date}
+    mistakes:[],
     achievementsUnlocked:[],
     coinsEarnedTotal:0,
     stats:{ totalPractices:0, quizzesTaken:0, hadPerfectQuiz:false,
-      subjectProgress:{}, // subj: {correct,total}
-      dailyMinutes:{} // 'YYYY-MM-DD': minutes
+      subjectProgress:{},
+      dailyMinutes:{}
     },
     dailyMissions:null, dailyMissionsDate:null,
-    classCode:null, students:[], homework:[],
     darkMode:true
   };
 }
@@ -759,8 +728,6 @@ function migrateAccount(acc){
   if(!Array.isArray(acc.mistakes)) acc.mistakes = [];
   if(!Array.isArray(acc.owned)) acc.owned = [];
   if(!Array.isArray(acc.achievementsUnlocked)) acc.achievementsUnlocked = [];
-  if(!Array.isArray(acc.students)) acc.students = [];
-  if(!Array.isArray(acc.homework)) acc.homework = [];
   if(!acc.profile) acc.profile = d.profile;
   else Object.keys(d.profile).forEach(k=>{ if(acc.profile[k]===undefined) acc.profile[k] = d.profile[k]; });
   if(!acc.stats) acc.stats = d.stats;
@@ -769,7 +736,6 @@ function migrateAccount(acc){
   return acc;
 }
 function saveState(){
-  // state הוא reference חי בתוך accounts[username] (אין שכפול), אז מספיק לשמור accounts+session
   localStorage.setItem('aiTeacherAccounts', JSON.stringify(accounts));
   localStorage.setItem('aiTeacherSession', JSON.stringify(session));
 }
@@ -782,9 +748,6 @@ function setActiveStudent(username){
   state = accounts[username];
 }
 
-/* =========================================================
-   NAVIGATION
-========================================================= */
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el = document.getElementById('screen-'+name);
@@ -799,7 +762,6 @@ function showScreen(name){
   if(name==='mistakes') renderMistakes();
   if(name==='statistics') renderStatistics();
   if(name==='parent-dash') renderParentDash();
-  if(name==='teacher-dash') renderTeacherDash();
   if(name==='quiz-setup') renderQuizSetup();
   if(name==='edit-profile') renderEditProfile();
 }
@@ -810,9 +772,6 @@ function showToast(msg){
   window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-/* =========================================================
-   AUTH: LOGIN / REGISTER (student accounts)
-========================================================= */
 function doLogin(){
   const uInput = document.getElementById('login-username').value.trim();
   const p = document.getElementById('login-password').value.trim();
@@ -832,10 +791,6 @@ function startRegister(){
   document.getElementById('ob-name').value='';
   document.getElementById('ob-password').value='';
   document.getElementById('ob-age').value='';
-  ['1','2','3'].forEach(n=>{
-    document.getElementById('ob-step'+n).classList.toggle('hidden', n!=='1');
-    document.getElementById('dot'+n).classList.toggle('on', n==='1');
-  });
   renderEmojiPicker('ob-emoji-picker','ob-avatar-preview');
 }
 function obNext(step){
@@ -927,14 +882,10 @@ function saveProfileEdits(){
   showScreen('settings');
 }
 
-/* =========================================================
-   DAILY / STREAK LOGIC
-========================================================= */
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function ensureDailyReset(){
   const t = todayStr();
   if(state.todayDate !== t){
-    // handle streak
     if(state.lastActiveDate){
       const diff = (new Date(t) - new Date(state.lastActiveDate))/86400000;
       if(diff > 1) state.streak = 0;
@@ -973,9 +924,6 @@ function progressMission(key, amount=1){
   }
 }
 
-/* =========================================================
-   XP / LEVEL / COINS
-========================================================= */
 function xpForLevel(lvl){ return lvl*80; }
 function addXP(amount){
   state.xp += amount;
@@ -998,9 +946,6 @@ function checkAchievements(){
   saveState();
 }
 
-/* =========================================================
-   HOME RENDER
-========================================================= */
 function renderHome(){
   ensureDailyReset();
   document.getElementById('home-greet').textContent = 'שלום, '+(state.profile.name||'תלמיד/ה')+' 👋';
@@ -1073,9 +1018,6 @@ function drawWeekChart(canvasId){
   });
 }
 
-/* =========================================================
-   SUBJECTS
-========================================================= */
 let currentSubject = null;
 function renderSubjects(){
   const q = (document.getElementById('subject-search').value||'').trim();
@@ -1111,11 +1053,6 @@ function openQuizSetupFromTopic(){
   document.getElementById('quiz-subject').value = currentSubject.id;
 }
 
-/* =========================================================
-   AI API HELPERS
-========================================================= */
-// כל קריאות ה-AI עוברות דרך ה-Cloudflare Worker שמחזיק את מפתח ה-API
-// בבטחה בצד השרת. ראה worker/README.md לפרטי הפריסה.
 const WORKER_URL = "https://ai-teacher-proxy.ai-teacher1.workers.dev";
 
 async function callClaude(messages, system){
@@ -1143,10 +1080,7 @@ function extractJSON(text){
   const start = clean.indexOf('{'); const end = clean.lastIndexOf('}');
   return JSON.parse(clean.slice(start, end+1));
 }
-// הנחיה משותפת: האפליקציה מציגה טקסט רגיל בלבד, בלי רינדור LaTeX/Markdown.
-// בלי זה ה-AI לפעמים כותב \frac{3}{4}, $x^2$ וכו' וזה יוצא כטקסט גולמי מוזר.
 const NO_LATEX_RULE = ' חשוב מאוד: אל תשתמש בסימוני LaTeX (כמו \\frac, \\times, $...$, \\sqrt) ואל תשתמש בכוכביות של Markdown להדגשה. כתוב מתמטיקה בטקסט רגיל וברור בלבד, למשל: "3/4" במקום \\frac{3}{4}, "x בריבוע" או "x^2" במקום $x^2$, "כפול" או "x" במקום \\times.';
-// רשת ביטחון: גם אם ה-AI בכל זאת כותב LaTeX/Markdown, מנקים לפני התצוגה.
 function sanitizeAIText(t){
   if(!t) return t;
   return t
@@ -1165,9 +1099,6 @@ function sanitizeAIText(t){
     .replace(/\*\*(.*?)\*\*/g, '$1');
 }
 
-/* =========================================================
-   WHITEBOARD
-========================================================= */
 let wbCtx = null, wbDrawing = false, wbLastX = 0, wbLastY = 0, wbContext = '';
 function openWhiteboard(contextText, allowSend){
   if(allowSend === undefined) allowSend = true;
@@ -1243,10 +1174,9 @@ async function sendWhiteboardToAI(){
   }
 }
 
-/* =========================================================
-   AI CHAT
-========================================================= */
 let chatHistory = [];
+let msgIdCounter = 0;
+let replyContext = null; // {text, role}
 function openChat(){
   showScreen('chat');
   if(chatHistory.length===0){
@@ -1254,20 +1184,112 @@ function openChat(){
     pushMsg('ai', 'היי '+(state.profile.name||'')+'! אני המורה הפרטי שלך 🤖'+subj+'. על מה תרצה/י ללמוד היום?');
   }
 }
-function pushMsg(role, text){
-  chatHistory.push({role, text});
+function copyText(text){
+  const doCopy = ()=>{
+    showToast('הועתק ✅');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(doCopy).catch(()=>{
+      fallbackCopy(text); doCopy();
+    });
+  } else {
+    fallbackCopy(text); doCopy();
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+// מזהה בלוקים בתוך ```...``` (קוד/רשימות שכדאי להעתיק) ומרנדר אותם עם כפתור העתקה,
+// שאר הטקסט מוצג כרגיל.
+function renderMessageBody(text){
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const parts = escaped.split(/```(?:[a-zA-Z]*\n)?([\s\S]*?)```/g);
+  let html = '';
+  parts.forEach((part, i)=>{
+    if(i % 2 === 1){
+      const codeId = 'code_'+Date.now()+'_'+i+'_'+Math.floor(Math.random()*10000);
+      html += `<div class="code-block-wrap"><pre id="${codeId}">${part}</pre><button class="code-copy-btn" onclick="copyCodeBlock('${codeId}')">📋<span class="code-copy-tip">העתק</span></button></div>`;
+    } else if(part){
+      html += `<span>${part}</span>`;
+    }
+  });
+  return html;
+}
+function copyCodeBlock(id){
+  const el = document.getElementById(id);
+  if(el) copyText(el.textContent);
+}
+function copyMessageById(id){
+  const m = chatHistory.find(x=>x.id===id);
+  if(m){ copyText(m.text); }
+  toggleMsgMenu(id);
+}
+function toggleMsgMenu(id){
+  document.querySelectorAll('.msg-dropdown').forEach(d=>{ if(d.id!==('dd_'+id)) d.classList.remove('show'); });
+  const dd = document.getElementById('dd_'+id);
+  if(dd) dd.classList.toggle('show');
+}
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.msg-menu-wrap')){
+    document.querySelectorAll('.msg-dropdown').forEach(d=>d.classList.remove('show'));
+  }
+});
+function replyToMessage(id){
+  const m = chatHistory.find(x=>x.id===id);
+  if(!m) return;
+  replyContext = {text:m.text, role:m.role};
+  document.getElementById('reply-preview-text').textContent = (m.role==='ai'?'🤖 ':'🙋 ') + m.text.slice(0,80);
+  document.getElementById('reply-preview').classList.remove('hidden');
+  document.querySelectorAll('.msg-dropdown').forEach(d=>d.classList.remove('show'));
+  document.getElementById('chat-input').focus();
+}
+function cancelReply(){
+  replyContext = null;
+  document.getElementById('reply-preview').classList.add('hidden');
+}
+function pushMsg(role, text, quotedText){
+  const id = ++msgIdCounter;
+  chatHistory.push({role, text, id});
   const log = document.getElementById('chat-log');
+
+  const row = document.createElement('div');
+  row.className = 'msg-row '+(role==='ai'?'ai':'user');
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'msg-toolbar';
+  toolbar.innerHTML = `
+    <div class="msg-menu-wrap">
+      <button class="msg-menu-btn" onclick="toggleMsgMenu(${id})">⋮</button>
+      <div class="msg-dropdown" id="dd_${id}">
+        <button onclick="copyMessageById(${id})">📋 העתק</button>
+        <button onclick="replyToMessage(${id})">↩️ הגב על ההודעה</button>
+      </div>
+    </div>`;
+  row.appendChild(toolbar);
+
   const div = document.createElement('div');
   div.className = 'msg '+(role==='ai'?'ai':'user');
-  div.textContent = sanitizeAIText(text);
-  log.appendChild(div);
+  let inner = '';
+  if(quotedText){
+    inner += `<div class="quoted-ref">${quotedText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,90)}</div>`;
+  }
+  inner += renderMessageBody(sanitizeAIText(text));
+  div.innerHTML = inner;
+  row.appendChild(div);
+
   if(role==='ai'){
     const wbBtn = document.createElement('button');
     wbBtn.className = 'wb-under-btn';
     wbBtn.innerHTML = '📝 לוח כתיבה';
     wbBtn.onclick = ()=> openWhiteboard(text);
-    log.appendChild(wbBtn);
+    row.appendChild(wbBtn);
   }
+
+  log.appendChild(row);
   log.scrollTop = log.scrollHeight;
   window.scrollTo(0, document.body.scrollHeight);
 }
@@ -1279,15 +1301,21 @@ async function sendChat(){
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if(!text) return;
-  pushMsg('user', text);
+  const activeReply = replyContext;
+  pushMsg('user', text, activeReply ? activeReply.text : null);
   input.value = '';
+  cancelReply();
   const log = document.getElementById('chat-log');
   const typing = document.createElement('div');
   typing.className = 'msg ai typing-dots'; typing.innerHTML = '<span></span><span></span><span></span>';
   log.appendChild(typing); log.scrollTop = log.scrollHeight;
   try{
     const apiMsgs = chatHistory.slice(-10).map(m=>({role: m.role==='ai'?'assistant':'user', content:m.text}));
-    const sys = 'אתה מורה פרטי סבלני ומעודד לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'. ענה בעברית פשוטה וברורה, בקצרה יחסית (עד כמה פסקאות), עם דוגמאות כשמתאים. אם המשתמש מבקש הסבר לילד קטן - השתמש באנלוגיות פשוטות מהחיים. היה חם ומעודד.' + NO_LATEX_RULE;
+    if(activeReply){
+      const lastIdx = apiMsgs.length-1;
+      apiMsgs[lastIdx] = {role:'user', content: `(בתגובה להודעה: "${activeReply.text}")\n\n${text}`};
+    }
+    const sys = 'אתה מורה פרטי סבלני ומעודד לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'. ענה בעברית פשוטה וברורה, בקצרה יחסית (עד כמה פסקאות), עם דוגמאות כשמתאים. אם המשתמש מבקש הסבר לילד קטן - השתמש באנלוגיות פשוטות מהחיים. היה חם ומעודד. כשפותרים תרגיל בכמה שלבים, או כשיש רשימה של פריטים, תפריד כל שלב/פריט לשורה משלו (ירידת שורה) במקום לדחוס הכל לפסקה אחת רצופה - אין צורך שכל השורות יהיו באותו אורך. אם כותבים קוד, נוסחה מורכבת, או רשימה שהתלמיד/ה כנראה ירצה להעתיק - עטוף את זה בשלוש גרשיים הפוכות (```) כדי שיהיה אפשר להעתיק בקלות.' + NO_LATEX_RULE;
     const reply = await callClaude(apiMsgs, sys);
     typing.remove();
     pushMsg('ai', reply || 'סליחה, לא הצלחתי לענות כרגע. נסה/י שוב.');
@@ -1298,9 +1326,6 @@ async function sendChat(){
   }
 }
 
-/* =========================================================
-   PRACTICE
-========================================================= */
 let practiceState = {question:null, answered:false};
 async function startPractice(){
   showScreen('practice');
@@ -1388,9 +1413,6 @@ function saveMistake(q){
   saveState();
 }
 
-/* =========================================================
-   QUIZ
-========================================================= */
 function renderQuizSetup(){
   const sel = document.getElementById('quiz-subject');
   sel.innerHTML = SUBJECTS.map(s=>`<option value="${s.id}">${s.ic} ${s.name}</option>`).join('');
@@ -1493,9 +1515,6 @@ function finishQuiz(){
   showScreen('quiz-results');
 }
 
-/* =========================================================
-   MISTAKES
-========================================================= */
 function renderMistakes(){
   const wrap = document.getElementById('mistakes-list');
   if(state.mistakes.length===0){
@@ -1519,9 +1538,6 @@ async function retryMistake(id){
   await loadPracticeQuestion();
 }
 
-/* =========================================================
-   ACHIEVEMENTS
-========================================================= */
 function renderAchievements(){
   const wrap = document.getElementById('achievements-list');
   wrap.innerHTML = BADGES.map(b=>{
@@ -1533,9 +1549,6 @@ function renderAchievements(){
   }).join('');
 }
 
-/* =========================================================
-   AVATAR / SHOP
-========================================================= */
 function renderAvatarScreen(){
   document.getElementById('av-preview').textContent = state.profile.avatar;
   document.getElementById('av-preview').style.background = state.profile.avatarColor;
@@ -1581,9 +1594,6 @@ function buyItem(id){
   renderShop();
 }
 
-/* =========================================================
-   SETTINGS
-========================================================= */
 function toggleDark(){
   state.darkMode = !state.darkMode;
   document.body.classList.toggle('light', !state.darkMode);
@@ -1598,9 +1608,6 @@ function setDailyGoal(v){
   saveState(); showToast('יעד יומי עודכן ל-'+v+' דקות');
 }
 
-/* =========================================================
-   STATISTICS
-========================================================= */
 function renderStatistics(){
   drawWeekChart('stats-week-chart');
   const wrap = document.getElementById('stats-subjects');
@@ -1625,9 +1632,6 @@ function renderStatistics(){
     : `תרגל/י כמה שאלות כדי לקבל תחזית מותאמת אישית.`;
 }
 
-/* =========================================================
-   PARENT / TEACHER LOGIN (connect to existing child accounts)
-========================================================= */
 function requestParentAccess(){
   const code = state.profile.parentCode;
   if(!code){
@@ -1640,9 +1644,6 @@ function requestParentAccess(){
   showScreen('parent-dash');
 }
 
-/* =========================================================
-   PARENT DASHBOARD
-========================================================= */
 function renderParentDash(){
   document.getElementById('pd-today').textContent = state.todayMinutes+' דק\'';
   document.getElementById('pd-streak').textContent = state.streak;
@@ -1672,38 +1673,9 @@ function sendParentMessage(){
   showToast('ההודעה נשלחה לתלמיד/ה 📩');
 }
 
-/* =========================================================
-   TEACHER DASHBOARD
-========================================================= */
-function renderTeacherDash(){
-  document.getElementById('class-code').textContent = state.classCode || '—';
-  document.getElementById('teacher-students').innerHTML = state.students.length
-    ? state.students.map(s=>`<div class="stat-block"><span>${s}</span><span class="pill">פעיל</span></div>`).join('')
-    : `<span style="color:var(--text-dim); font-size:13px;">אין עדיין תלמידים רשומים בכיתה</span>`;
-}
-function generateClassCode(){
-  state.classCode = 'C-' + Math.random().toString(36).slice(2,7).toUpperCase();
-  state.students = ['נועה כהן','איתי לוי','שירה בן־דוד'];
-  saveState();
-  renderTeacherDash();
-  showToast('כיתה נוצרה: '+state.classCode);
-}
-function assignHomework(){
-  const v = document.getElementById('hw-text').value.trim();
-  if(!v) return;
-  state.homework.unshift({text:v, date:new Date().toLocaleDateString('he-IL')});
-  saveState();
-  document.getElementById('hw-text').value = '';
-  showToast('שיעורי הבית נשלחו לכיתה ✅');
-}
-
-/* =========================================================
-   INIT
-========================================================= */
 function init(){
   loadAccounts();
   loadSession();
-  // ניקוי הגנתי: אם session מצביע על username שכבר לא קיים ב-accounts (נמחק/שם שונה), מתאפס
   if(session.mode==='student' && !accounts[session.username]) session = {mode:null, username:null};
   Object.keys(accounts).forEach(u=> migrateAccount(accounts[u]));
 
