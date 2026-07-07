@@ -2,8 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-<meta name="google-site-verification" content="A2unCFWXldS0fyKqPt6eBJwuPM3qJKaku1UzaCAD13U" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>המורה החכם | SmartLearn AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1445,15 +1444,34 @@ async function loadPracticeQuestion(){
       </div>`;
   }
 }
+let recentQuestionsLog = []; // {subject, topic, question} - זיכרון קצר כדי למנוע חזרות
+const QUESTION_ANGLE_HINTS = [
+  'השתמש/י בדוגמה יומיומית ומקורית, לא הדוגמה הכי מוכרת/שכיחה לנושא',
+  'התמקד/י בזווית פחות נפוצה של הנושא',
+  'השתמש/י במספרים או בדוגמה שונים מהרגיל',
+  'נסח/י את השאלה בצורה יצירתית, לא בניסוח סטנדרטי מספר לימוד',
+  'התייחס/י ליישום מעשי או מציאותי של הנושא',
+  'בחר/י היבט שונה של הנושא מזה שהיה מתבקש באופן הכי טבעי'
+];
 async function generateQuestion(subject, topic, difficulty){
   const sys = 'אתה מחולל שאלות לימודיות. החזר אך ורק אובייקט JSON תקני (ללא טקסט נוסף, ללא Markdown) במבנה: {"question":"טקסט השאלה בעברית","type":"multiple_choice או true_false","options":["אפשרות1","אפשרות2","אפשרות3","אפשרות4"],"correctIndex":0,"explanation":"הסבר קצר בעברית מדוע זו התשובה הנכונה"}. עבור true_false האפשרויות יהיו בדיוק ["נכון","לא נכון"].' + NO_LATEX_RULE;
   const gradeNote = customGradeOverride ? (', מותאם לרמת כיתה '+customGradeOverride) : '';
-  const userMsg = 'צור שאלה במקצוע: '+subject+', נושא: '+topic+', רמת קושי: '+difficulty+gradeNote+'. חשוב: JSON בלבד.';
+  const recentForThis = recentQuestionsLog
+    .filter(r => r.subject===subject && r.topic===topic)
+    .slice(-8)
+    .map(r => r.question);
+  const avoidNote = recentForThis.length
+    ? ' חשוב מאוד: כבר נשאלו השאלות הבאות באותו נושא - אסור לחזור עליהן או ליצור שאלה דומה מדי להן (אותם מספרים/אותה דוגמה עם שינוי קטן), צור שאלה שונה לגמרי מבחינת התוכן והדוגמה: ' + recentForThis.map(q=>'"'+q+'"').join(' | ') + '.'
+    : '';
+  const angleHint = QUESTION_ANGLE_HINTS[Math.floor(Math.random()*QUESTION_ANGLE_HINTS.length)];
+  const userMsg = 'צור שאלה במקצוע: '+subject+', נושא: '+topic+', רמת קושי: '+difficulty+gradeNote+'. '+angleHint+'.'+avoidNote+' חשוב: JSON בלבד.';
   const text = await callClaude([{role:'user', content:userMsg}], sys);
   const q = extractJSON(text);
   q.question = sanitizeAIText(q.question);
   q.options = q.options.map(sanitizeAIText);
   q.explanation = sanitizeAIText(q.explanation);
+  recentQuestionsLog.push({subject, topic, question:q.question});
+  if(recentQuestionsLog.length > 60) recentQuestionsLog = recentQuestionsLog.slice(-60);
   return q;
 }
 function renderQuestion(container, q, isQuiz, meta){
