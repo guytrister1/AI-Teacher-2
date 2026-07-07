@@ -1477,7 +1477,10 @@ async function startQuiz(){
   const questions = [];
   try{
     for(let i=0;i<count;i++){
-      const q = await generateQuestion(subj.name, topicsFor(subjId)[i % topicsFor(subjId).length], diff);
+      const topicForQ = (currentSubject && currentSubject.id === subjId && currentTopic)
+        ? currentTopic
+        : topicsFor(subjId)[i % topicsFor(subjId).length];
+      const q = await generateQuestion(subj.name, topicForQ, diff);
       questions.push(q);
     }
   }catch(e){
