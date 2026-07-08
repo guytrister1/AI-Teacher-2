@@ -512,7 +512,7 @@ input,select,textarea{font-family:var(--font-b);}
     <button class="btn btn-ghost" onclick="openChat()">🤖 שאל את ה-AI</button>
     <button class="btn btn-ghost" onclick="showToast('פותח מצלמה... (הדגמה) 📷')">📷 צלם ותרגל</button>
   </div>
-  <button class="btn btn-block" style="margin-top:10px; background:linear-gradient(135deg,var(--violet),#6a5acd); color:#fff;" onclick="openVoiceLesson()">🎙️ שיעור עם AI</button>
+  <button class="btn btn-block" style="margin-top:10px; background:linear-gradient(135deg,var(--violet),#6a5acd); color:#fff;" onclick="showScreen('voice-lesson-setup')">🎙️ שיעור עם AI</button>
 </section>
 
 <section class="screen" id="screen-chat">
@@ -542,6 +542,21 @@ input,select,textarea{font-family:var(--font-b);}
     <button class="back-btn" onclick="showToast('נשמר להמשך אח״כ ✅')">⏸</button>
   </div>
   <div id="practice-area"></div>
+</section>
+
+<section class="screen" id="screen-voice-lesson-setup">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('topics')">→</button><h2>🎙️ הגדרת שיעור</h2><div style="width:38px"></div></div>
+  <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:16px;" id="vls-context"></p>
+  <div class="field"><label>רמת קושי</label>
+    <select id="voice-lesson-diff"><option>קל</option><option selected>בינוני</option><option>קשה</option><option>רמת בגרות</option></select>
+  </div>
+  <div class="field"><label>כיתה</label>
+    <select id="voice-lesson-grade">
+      <option>גן חובה</option><option>א'</option><option>ב'</option><option>ג'</option><option>ד'</option><option>ה'</option><option>ו'</option>
+      <option>ז'</option><option>ח'</option><option>ט'</option><option selected>י'</option><option>י"א</option><option>י"ב</option>
+    </select>
+  </div>
+  <button class="btn btn-gold btn-block" onclick="startVoiceLessonWithSettings()">🚀 התחל שיעור</button>
 </section>
 
 <section class="screen" id="screen-voice-lesson">
@@ -910,6 +925,7 @@ function showScreen(name){
   if(name==='home') renderHome();
   if(name==='subjects') renderSubjects();
   if(name==='custom-topic') renderCustomTopicScreen();
+  if(name==='voice-lesson-setup') renderVoiceLessonSetup();
   if(name==='achievements') renderAchievements();
   if(name==='avatar') renderAvatarScreen();
   if(name==='shop') renderShop();
@@ -1522,6 +1538,20 @@ let matchState = {selectedLeft:null, connections:{}};
 function getSpeechRecognition(){
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
+let voiceLessonDifficulty = 'בינוני';
+function renderVoiceLessonSetup(){
+  const ctxEl = document.getElementById('vls-context');
+  if(currentSubject && currentTopic) ctxEl.textContent = 'שיעור ב-'+currentSubject.name+' על הנושא: '+currentTopic;
+  else if(currentSubject) ctxEl.textContent = 'שיעור ב-'+currentSubject.name;
+  else ctxEl.textContent = 'שיעור כללי (בחר/י מקצוע ונושא קודם דרך "למידה" לשיעור ממוקד יותר)';
+  document.getElementById('voice-lesson-diff').value = voiceLessonDifficulty;
+  document.getElementById('voice-lesson-grade').value = customGradeOverride || state.profile.grade || "י'";
+}
+function startVoiceLessonWithSettings(){
+  voiceLessonDifficulty = document.getElementById('voice-lesson-diff').value;
+  customGradeOverride = document.getElementById('voice-lesson-grade').value;
+  openVoiceLesson();
+}
 function openVoiceLesson(){
   const SR = getSpeechRecognition();
   if(!SR){
@@ -1635,7 +1665,8 @@ async function handleVoiceInput(text){
     let topicCtx = '';
     if(currentSubject && currentTopic) topicCtx = ' השיעור מתמקד בנושא "'+currentTopic+'" במקצוע '+currentSubject.name+'.';
     else if(currentSubject) topicCtx = ' השיעור מתמקד במקצוע '+currentSubject.name+'.';
-    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
+    const gradeForLesson = customGradeOverride || state.profile.grade || '';
+    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+gradeForLesson+', ברמת קושי '+voiceLessonDifficulty+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. התאם/י את רמת השפה וההסברים לכיתה ולרמת הקושי שצוינו. היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
     const reply = await callClaude(apiMsgs, sys);
     const clean = sanitizeAIText(reply || 'סליחה, לא הצלחתי לענות.');
     addVoiceBubble('ai', clean);
@@ -1702,8 +1733,8 @@ async function generateActivity(){
   board.innerHTML = `<div class="loader"><div class="spin-ic"></div></div>`;
   const subj = currentSubject?.name || 'שפה ואוצר מילים כללי';
   const topic = currentTopic || 'נושא כללי מהנה ללימוד';
-  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'. החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, באחד משני המבנים הבאים (בחר/י אקראית אחד מהם בכל פעם):\n1) תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.\n2) תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.' + NO_LATEX_RULE;
-  const userMsg = 'צור תרגיל חזותי במקצוע '+subj+', נושא: '+topic+'. JSON בלבד.';
+  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(customGradeOverride || state.profile.grade||'')+'. החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, באחד משני המבנים הבאים (בחר/י אקראית אחד מהם בכל פעם):\n1) תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.\n2) תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.' + NO_LATEX_RULE;
+  const userMsg = 'צור תרגיל חזותי במקצוע '+subj+', נושא: '+topic+', רמת קושי: '+voiceLessonDifficulty+'. JSON בלבד.';
   try{
     const text = await callClaude([{role:'user', content:userMsg}], sys);
     const activity = extractJSON(text);
