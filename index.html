@@ -1200,21 +1200,14 @@ function renderSubjects(){
 function openSubject(id){
   currentSubject = SUBJECTS.find(s=>s.id===id);
   customGradeOverride = null; // חוזרים לזרימה הרגילה, מבטלים כל התאמת כיתה מהזרימה המותאמת אישית
+  currentTopic = null; // אין יותר בחירת נושא קבוע - לנושא ספציפי משתמשים ב"מותאם אישית"
   document.getElementById('topics-title').textContent = currentSubject.ic+' '+currentSubject.name;
-  const list = document.getElementById('topics-list');
-  const topics = topicsFor(id);
-  currentTopic = topics[0];
-  list.innerHTML = topics.map((t,i)=>`<button class="diff-tab ${i===0?'sel':''}" onclick="selectTopic('${t}',this)">${t}</button>`).join('');
+  document.getElementById('topics-list').innerHTML = '';
   progressMission('newTopic',1);
   showScreen('topics');
 }
 let currentTopic = null;
 let customGradeOverride = null;
-function selectTopic(t, el){
-  currentTopic = t;
-  document.querySelectorAll('#topics-list .diff-tab').forEach(b=>b.classList.remove('sel'));
-  el.classList.add('sel');
-}
 function openQuizSetupFromTopic(){
   showScreen('quiz-setup');
   document.getElementById('quiz-subject').value = currentSubject.id;
@@ -1539,6 +1532,12 @@ function getSpeechRecognition(){
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 let voiceLessonDifficulty = 'בינוני';
+const DIFFICULTY_GUIDE = {
+  'קל': 'משפטים קצרים מאוד ופשוטים, מילים יומיומיות בלבד (בלי מונחים מקצועיים), דוגמאות מוחשיות מהחיים, הסבר צעד-צעד איטי.',
+  'בינוני': 'משפטים ואוצר מילים ברמת בית ספר רגילה לגיל/כיתה, הסברים ברורים עם דוגמה אחת או שתיים.',
+  'קשה': 'שפה עשירה יותר, מושגים מורכבים יותר וקשרים בין רעיונות, פחות פישוט, ציפייה שהתלמיד/ה כבר מכיר/ה יסודות.',
+  'רמת בגרות': 'רמה אקדמית עם מונחים מקצועיים כשרלוונטי, ניתוח מעמיק וחשיבה ביקורתית, כמו בשאלת בגרות.'
+};
 function renderVoiceLessonSetup(){
   const ctxEl = document.getElementById('vls-context');
   if(currentSubject && currentTopic) ctxEl.textContent = 'שיעור ב-'+currentSubject.name+' על הנושא: '+currentTopic;
@@ -1666,7 +1665,8 @@ async function handleVoiceInput(text){
     if(currentSubject && currentTopic) topicCtx = ' השיעור מתמקד בנושא "'+currentTopic+'" במקצוע '+currentSubject.name+'.';
     else if(currentSubject) topicCtx = ' השיעור מתמקד במקצוע '+currentSubject.name+'.';
     const gradeForLesson = customGradeOverride || state.profile.grade || '';
-    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+gradeForLesson+', ברמת קושי '+voiceLessonDifficulty+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. התאם/י את רמת השפה וההסברים לכיתה ולרמת הקושי שצוינו. היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
+    const diffGuide = DIFFICULTY_GUIDE[voiceLessonDifficulty] || '';
+    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+gradeForLesson+', ברמת קושי '+voiceLessonDifficulty+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. הנחיה קונקרטית לרמה שנבחרה: '+diffGuide+' היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
     const reply = await callClaude(apiMsgs, sys);
     const clean = sanitizeAIText(reply || 'סליחה, לא הצלחתי לענות.');
     addVoiceBubble('ai', clean);
@@ -1733,7 +1733,7 @@ async function generateActivity(){
   board.innerHTML = `<div class="loader"><div class="spin-ic"></div></div>`;
   const subj = currentSubject?.name || 'שפה ואוצר מילים כללי';
   const topic = currentTopic || 'נושא כללי מהנה ללימוד';
-  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(customGradeOverride || state.profile.grade||'')+'. החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, באחד משני המבנים הבאים (בחר/י אקראית אחד מהם בכל פעם):\n1) תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.\n2) תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.' + NO_LATEX_RULE;
+  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(customGradeOverride || state.profile.grade||'')+', ברמת קושי '+voiceLessonDifficulty+' ('+(DIFFICULTY_GUIDE[voiceLessonDifficulty]||'')+'). החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, באחד משני המבנים הבאים (בחר/י אקראית אחד מהם בכל פעם):\n1) תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.\n2) תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.' + NO_LATEX_RULE;
   const userMsg = 'צור תרגיל חזותי במקצוע '+subj+', נושא: '+topic+', רמת קושי: '+voiceLessonDifficulty+'. JSON בלבד.';
   try{
     const text = await callClaude([{role:'user', content:userMsg}], sys);
@@ -1872,7 +1872,8 @@ async function loadPracticeQuestion(){
   const area = document.getElementById('practice-area');
   area.innerHTML = `<div class="loader"><div class="spin-ic"></div>מכין שאלה חדשה...</div>`;
   try{
-    const q = await generateQuestion(currentSubject?.name||'כללי', currentTopic||'יסודות', 'בינוני');
+    const topicForQ = currentTopic || (currentSubject ? topicsFor(currentSubject.id)[Math.floor(Math.random()*topicsFor(currentSubject.id).length)] : 'יסודות');
+    const q = await generateQuestion(currentSubject?.name||'כללי', topicForQ, 'בינוני');
     practiceState = {question:q, answered:false};
     renderQuestion(area, q, false);
   }catch(e){
