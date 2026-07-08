@@ -320,6 +320,29 @@ input,select,textarea{font-family:var(--font-b);}
 .arcade-banner .ab-emoji{font-size:40px; display:block; margin-bottom:6px;}
 .arcade-banner .ab-title{font-family:var(--font-d); font-size:18px; font-weight:800;}
 .arcade-flavor{text-align:center; font-size:13px; color:var(--teal); font-weight:700; min-height:20px; margin-bottom:8px;}
+
+/* ---------- voice lesson ---------- */
+.voice-transcript{flex:1; display:flex; flex-direction:column; gap:10px; padding:6px 2px; margin-bottom:16px; overflow-y:auto;}
+.voice-status{text-align:center; font-size:13.5px; color:var(--text-dim); font-weight:700; margin-bottom:18px; min-height:20px;}
+.mic-wrap{display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:auto; padding-bottom:10px;}
+.mic-btn{
+  width:84px; height:84px; border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),#e0982b); color:#22160a; font-size:34px;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(242,184,75,.4);
+  transition:transform .15s;
+}
+.mic-btn:active{transform:scale(.95);}
+.mic-btn.listening{
+  background:linear-gradient(135deg,var(--coral),#c94b4b); box-shadow:0 0 0 0 rgba(255,107,107,.5);
+  animation:mic-pulse 1.4s infinite;
+}
+@keyframes mic-pulse{
+  0%{box-shadow:0 0 0 0 rgba(255,107,107,.5);}
+  70%{box-shadow:0 0 0 22px rgba(255,107,107,0);}
+  100%{box-shadow:0 0 0 0 rgba(255,107,107,0);}
+}
+.mic-btn.speaking{background:linear-gradient(135deg,var(--teal),#1a9c8c); box-shadow:0 8px 24px rgba(45,212,191,.4);}
+.stop-speak-btn{background:var(--panel2); border:1px solid var(--line); color:var(--coral); border-radius:100px; padding:8px 18px; font-size:12.5px; font-weight:700;}
 </style>
 </head>
 <body>
@@ -471,6 +494,7 @@ input,select,textarea{font-family:var(--font-b);}
     <button class="btn btn-ghost" onclick="openChat()">🤖 שאל את ה-AI</button>
     <button class="btn btn-ghost" onclick="showToast('פותח מצלמה... (הדגמה) 📷')">📷 צלם ותרגל</button>
   </div>
+  <button class="btn btn-block" style="margin-top:10px; background:linear-gradient(135deg,var(--violet),#6a5acd); color:#fff;" onclick="openVoiceLesson()">🎙️ שיעור עם AI</button>
 </section>
 
 <section class="screen" id="screen-chat">
@@ -500,6 +524,16 @@ input,select,textarea{font-family:var(--font-b);}
     <button class="back-btn" onclick="showToast('נשמר להמשך אח״כ ✅')">⏸</button>
   </div>
   <div id="practice-area"></div>
+</section>
+
+<section class="screen" id="screen-voice-lesson">
+  <div class="topbar"><button class="back-btn" onclick="exitVoiceLesson()">→</button><h2 id="voice-lesson-title">🎙️ שיעור עם AI</h2><div style="width:38px"></div></div>
+  <div class="voice-transcript" id="voice-transcript"></div>
+  <div class="voice-status" id="voice-status">לחץ/י על המיקרופון ותתחיל/י לדבר</div>
+  <div class="mic-wrap">
+    <button class="stop-speak-btn hidden" id="stop-speak-btn" onclick="stopAISpeaking()">⏹ עצור דיבור</button>
+    <button class="mic-btn" id="mic-btn" onclick="toggleListening()">🎤</button>
+  </div>
 </section>
 
 <section class="screen" id="screen-quiz-setup">
@@ -1421,6 +1455,148 @@ async function sendChat(){
     typing.remove();
     pushMsg('ai', '⚠️ ' + (e.message || 'אירעה שגיאה בחיבור. נסה/י שוב בעוד רגע.'));
   }
+}
+
+/* =========================================================
+   VOICE LESSON (Speech-to-Text + Text-to-Speech, דפדפן בלבד)
+========================================================= */
+let voiceHistory = [];
+let recognizer = null;
+let isListening = false;
+let isSpeaking = false;
+function getSpeechRecognition(){
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+function openVoiceLesson(){
+  const SR = getSpeechRecognition();
+  if(!SR){
+    showToast('הדפדפן הזה לא תומך בזיהוי דיבור. נסה/י Chrome במחשב או באנדרואיד.');
+    return;
+  }
+  voiceHistory = [];
+  document.getElementById('voice-transcript').innerHTML = '';
+  let title = '🎙️ שיעור עם AI';
+  if(currentSubject && currentTopic) title += ' — '+currentTopic;
+  else if(currentSubject) title += ' — '+currentSubject.name;
+  document.getElementById('voice-lesson-title').textContent = title;
+  setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
+  showScreen('voice-lesson');
+  const subj = currentSubject ? ' בנושא '+(currentTopic||currentSubject.name) : '';
+  addVoiceBubble('ai', 'היי '+(state.profile.name||'')+'! זה שיעור קולי'+subj+'. לחץ/י על המיקרופון ותוכל/י לדבר איתי.');
+}
+function setVoiceStatus(text){
+  document.getElementById('voice-status').textContent = text;
+}
+function addVoiceBubble(role, text){
+  voiceHistory.push({role, text});
+  const wrap = document.getElementById('voice-transcript');
+  const row = document.createElement('div');
+  row.className = 'msg-row '+(role==='ai'?'ai':'user');
+  const div = document.createElement('div');
+  div.className = 'msg '+(role==='ai'?'ai':'user');
+  div.textContent = sanitizeAIText(text);
+  row.appendChild(div);
+  wrap.appendChild(row);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function toggleListening(){
+  if(isSpeaking){ stopAISpeaking(); }
+  if(isListening){
+    recognizer && recognizer.stop();
+    return;
+  }
+  const SR = getSpeechRecognition();
+  if(!SR){ showToast('זיהוי דיבור לא נתמך בדפדפן הזה'); return; }
+  recognizer = new SR();
+  recognizer.lang = 'he-IL';
+  recognizer.continuous = false;
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+
+  recognizer.onstart = ()=>{
+    isListening = true;
+    document.getElementById('mic-btn').classList.add('listening');
+    setVoiceStatus('מקשיב... 🎙️');
+  };
+  recognizer.onerror = (e)=>{
+    isListening = false;
+    document.getElementById('mic-btn').classList.remove('listening');
+    if(e.error === 'not-allowed' || e.error === 'permission-denied'){
+      setVoiceStatus('צריך לאשר גישה למיקרופון בדפדפן');
+    } else if(e.error === 'no-speech'){
+      setVoiceStatus('לא נשמע דיבור, נסה/י שוב');
+    } else {
+      setVoiceStatus('שגיאה בזיהוי דיבור, נסה/י שוב');
+    }
+  };
+  recognizer.onend = ()=>{
+    isListening = false;
+    document.getElementById('mic-btn').classList.remove('listening');
+  };
+  recognizer.onresult = (event)=>{
+    const said = event.results[0][0].transcript;
+    if(said && said.trim()) handleVoiceInput(said.trim());
+  };
+  try{ recognizer.start(); }catch(e){ showToast('לא ניתן להפעיל את המיקרופון'); }
+}
+async function handleVoiceInput(text){
+  addVoiceBubble('user', text);
+  setVoiceStatus('חושב/ת... 🤔');
+  try{
+    const apiMsgs = voiceHistory.slice(-10).map(m=>({role: m.role==='ai'?'assistant':'user', content:m.text}));
+    let topicCtx = '';
+    if(currentSubject && currentTopic) topicCtx = ' השיעור מתמקד בנושא "'+currentTopic+'" במקצוע '+currentSubject.name+'.';
+    else if(currentSubject) topicCtx = ' השיעור מתמקד במקצוע '+currentSubject.name+'.';
+    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. היה חם, מעודד וסבלני, ותשאל שאלת המשך קצרה כדי לשמור על שיחה דו-כיוונית.' + NO_LATEX_RULE;
+    const reply = await callClaude(apiMsgs, sys);
+    const clean = sanitizeAIText(reply || 'סליחה, לא הצלחתי לענות.');
+    addVoiceBubble('ai', clean);
+    markActivity(1);
+    speakText(clean);
+  }catch(e){
+    setVoiceStatus('שגיאה: ' + e.message);
+  }
+}
+function speakText(text){
+  if(!window.speechSynthesis){ setVoiceStatus('לחץ/י על המיקרופון כדי לדבר'); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'he-IL';
+  const voices = window.speechSynthesis.getVoices();
+  const heVoice = voices.find(v=>v.lang && v.lang.startsWith('he'));
+  if(heVoice) utter.voice = heVoice;
+  utter.onstart = ()=>{
+    isSpeaking = true;
+    document.getElementById('mic-btn').classList.add('speaking');
+    document.getElementById('stop-speak-btn').classList.remove('hidden');
+    setVoiceStatus('מדבר/ת... 🔊');
+  };
+  utter.onend = ()=>{
+    isSpeaking = false;
+    document.getElementById('mic-btn').classList.remove('speaking');
+    document.getElementById('stop-speak-btn').classList.add('hidden');
+    setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
+  };
+  utter.onerror = ()=>{
+    isSpeaking = false;
+    document.getElementById('mic-btn').classList.remove('speaking');
+    document.getElementById('stop-speak-btn').classList.add('hidden');
+    setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
+  };
+  window.speechSynthesis.speak(utter);
+}
+function stopAISpeaking(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  isSpeaking = false;
+  document.getElementById('mic-btn').classList.remove('speaking');
+  document.getElementById('stop-speak-btn').classList.add('hidden');
+  setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
+}
+function exitVoiceLesson(){
+  if(recognizer) try{ recognizer.stop(); }catch(e){}
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  isListening = false; isSpeaking = false;
+  showScreen('topics');
 }
 
 let practiceState = {question:null, answered:false};
