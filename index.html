@@ -321,28 +321,46 @@ input,select,textarea{font-family:var(--font-b);}
 .arcade-banner .ab-title{font-family:var(--font-d); font-size:18px; font-weight:800;}
 .arcade-flavor{text-align:center; font-size:13px; color:var(--teal); font-weight:700; min-height:20px; margin-bottom:8px;}
 
-/* ---------- voice lesson ---------- */
-.voice-transcript{flex:1; display:flex; flex-direction:column; gap:10px; padding:6px 2px; margin-bottom:16px; overflow-y:auto;}
-.voice-status{text-align:center; font-size:13.5px; color:var(--text-dim); font-weight:700; margin-bottom:18px; min-height:20px;}
-.mic-wrap{display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:auto; padding-bottom:10px;}
-.mic-btn{
-  width:84px; height:84px; border-radius:50%; border:none; cursor:pointer;
-  background:linear-gradient(135deg,var(--gold),#e0982b); color:#22160a; font-size:34px;
-  display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(242,184,75,.4);
-  transition:transform .15s;
+/* ---------- voice lesson (classroom style) ---------- */
+.lesson-controls{display:flex; gap:6px;}
+.lc-btn{width:34px; height:34px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px; display:flex; align-items:center; justify-content:center;}
+.lc-btn.active{background:var(--teal); color:#04211d; border-color:var(--teal);}
+.lc-btn.lc-end{background:var(--coral); color:#fff; border-color:var(--coral);}
+.lesson-avatars-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
+.avatar-box{position:relative; aspect-ratio:4/3; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:linear-gradient(160deg,#1e1b4b,#3730a3); display:flex; align-items:center; justify-content:center;}
+.avatar-box .avatar-label{position:absolute; bottom:0; right:0; left:0; padding:4px 8px; background:linear-gradient(to top, rgba(0,0,0,.7), transparent); color:#fff; font-size:11px; font-weight:700;}
+.webcam-box{background:#0b0e22;}
+.webcam-box video{width:100%; height:100%; object-fit:cover; transform:scaleX(-1);}
+.webcam-off-msg{color:var(--text-dim); font-size:11.5px; text-align:center; padding:0 10px;}
+.robot-face{display:flex; flex-direction:column; align-items:center;}
+.robot-head{width:64px; height:56px; background:linear-gradient(160deg,#e2e8f0,#94a3b8); border-radius:16px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,.3);}
+.robot-antenna{position:absolute; top:-10px; width:4px; height:10px; background:#94a3b8; border-radius:2px;}
+.robot-antenna::after{content:""; position:absolute; top:-6px; left:-2px; width:8px; height:8px; border-radius:50%; background:var(--coral);}
+.robot-eyes{display:flex; gap:10px; margin-bottom:4px;}
+.robot-eyes span{width:9px; height:9px; border-radius:50%; background:#0891b2;}
+.robot-mouth{width:22px; height:5px; background:#334155; border-radius:3px; transition:height .1s, border-radius .1s;}
+.robot-mouth.open{height:14px; border-radius:7px;}
+.lesson-board{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
+.lb-instructions{font-size:13px; font-weight:700; color:var(--gold); margin-bottom:12px; line-height:1.5;}
+.lb-content{margin-bottom:14px; min-height:80px;}
+.btn-submit-lesson{
+  width:100%; padding:13px; border-radius:12px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff;
+  font-weight:800; font-size:14.5px; border:none;
 }
-.mic-btn:active{transform:scale(.95);}
-.mic-btn.listening{
-  background:linear-gradient(135deg,var(--coral),#c94b4b); box-shadow:0 0 0 0 rgba(255,107,107,.5);
-  animation:mic-pulse 1.4s infinite;
-}
-@keyframes mic-pulse{
-  0%{box-shadow:0 0 0 0 rgba(255,107,107,.5);}
-  70%{box-shadow:0 0 0 22px rgba(255,107,107,0);}
-  100%{box-shadow:0 0 0 0 rgba(255,107,107,0);}
-}
-.mic-btn.speaking{background:linear-gradient(135deg,var(--teal),#1a9c8c); box-shadow:0 8px 24px rgba(45,212,191,.4);}
-.stop-speak-btn{background:var(--panel2); border:1px solid var(--line); color:var(--coral); border-radius:100px; padding:8px 18px; font-size:12.5px; font-weight:700;}
+.btn-submit-lesson:disabled{opacity:.5;}
+.match-wrap{position:relative; display:flex; justify-content:space-between; gap:30px;}
+.match-lines{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
+.match-col{display:flex; flex-direction:column; gap:10px; flex:1; z-index:1;}
+.match-item{padding:10px 12px; border-radius:12px; background:var(--panel2); border:2px solid var(--line); font-size:14px; font-weight:700; text-align:center;}
+.match-item.sel{border-color:var(--gold);}
+.match-item.correct{border-color:var(--teal); background:rgba(45,212,191,.15);}
+.match-item.wrong{border-color:var(--coral); background:rgba(255,107,107,.15);}
+.fillblank-row{background:var(--panel2); border-radius:12px; padding:12px; margin-bottom:10px; font-size:14px; line-height:1.8;}
+.fillblank-input{width:100px; padding:4px 8px; border-radius:8px; border:2px solid var(--line); background:var(--panel); color:var(--text); text-align:center; font-size:13.5px; margin:0 4px;}
+.fillblank-input.correct-input{border-color:var(--teal);}
+.fillblank-input.wrong-input{border-color:var(--coral);}
+.voice-transcript{max-height:130px; display:flex; flex-direction:column; gap:8px; padding:6px 2px; margin-bottom:10px; overflow-y:auto;}
+.voice-status{text-align:center; font-size:12px; color:var(--text-dim); font-weight:700; margin-bottom:6px; min-height:16px;}
 </style>
 </head>
 <body>
@@ -527,13 +545,43 @@ input,select,textarea{font-family:var(--font-b);}
 </section>
 
 <section class="screen" id="screen-voice-lesson">
-  <div class="topbar"><button class="back-btn" onclick="exitVoiceLesson()">→</button><h2 id="voice-lesson-title">🎙️ שיעור עם AI</h2><div style="width:38px"></div></div>
-  <div class="voice-transcript" id="voice-transcript"></div>
-  <div class="voice-status" id="voice-status">לחץ/י על המיקרופון ותתחיל/י לדבר</div>
-  <div class="mic-wrap">
-    <button class="stop-speak-btn hidden" id="stop-speak-btn" onclick="stopAISpeaking()">⏹ עצור דיבור</button>
-    <button class="mic-btn" id="mic-btn" onclick="toggleListening()">🎤</button>
+  <div class="topbar">
+    <button class="back-btn" onclick="exitVoiceLesson()">→</button>
+    <h2 id="voice-lesson-title" style="font-size:14px;">🎙️ שיעור עם AI</h2>
+    <div class="lesson-controls">
+      <button class="lc-btn active" id="lc-mic-btn" onclick="toggleListening()" title="מיקרופון">🎙️</button>
+      <button class="lc-btn" id="lc-video-btn" onclick="toggleCamera()" title="מצלמה">📹</button>
+      <button class="lc-btn active" id="lc-sound-btn" onclick="toggleSound()" title="קול">🔊</button>
+      <button class="lc-btn lc-end" onclick="exitVoiceLesson()" title="סיום שיעור">📞</button>
+    </div>
   </div>
+
+  <div class="lesson-avatars-row">
+    <div class="avatar-box">
+      <div class="robot-face">
+        <div class="robot-head">
+          <div class="robot-antenna" style="right:8px;"></div>
+          <div class="robot-eyes"><span></span><span></span></div>
+          <div class="robot-mouth" id="robot-mouth"></div>
+        </div>
+      </div>
+      <div class="avatar-label">🤖 מורה AI</div>
+    </div>
+    <div class="avatar-box webcam-box">
+      <video id="user-webcam" autoplay playsinline muted></video>
+      <div class="webcam-off-msg" id="webcam-off-msg">📷 מצלמה כבויה</div>
+      <div class="avatar-label" id="webcam-label">את/ה</div>
+    </div>
+  </div>
+
+  <div class="lesson-board">
+    <div class="lb-instructions" id="lb-instructions">טוען שיעור...</div>
+    <div class="lb-content" id="lb-content"></div>
+    <button class="btn-submit-lesson" id="lb-submit-btn" onclick="submitActivity()" disabled>✅ הגשה</button>
+  </div>
+
+  <div class="voice-status" id="voice-status">לחץ/י על המיקרופון ותוכל/י לדבר</div>
+  <div class="voice-transcript" id="voice-transcript"></div>
 </section>
 
 <section class="screen" id="screen-quiz-setup">
@@ -1458,12 +1506,19 @@ async function sendChat(){
 }
 
 /* =========================================================
-   VOICE LESSON (Speech-to-Text + Text-to-Speech, דפדפן בלבד)
+   VOICE LESSON / AI CLASSROOM
+   (Speech-to-Text + Text-to-Speech + webcam - הכל בדפדפן, בלי שרת נוסף)
 ========================================================= */
 let voiceHistory = [];
 let recognizer = null;
 let isListening = false;
 let isSpeaking = false;
+let soundEnabled = true;
+let webcamStream = null;
+let mouthInterval = null;
+let currentActivity = null;
+let matchState = {selectedLeft:null, connections:{}};
+
 function getSpeechRecognition(){
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
@@ -1479,10 +1534,10 @@ function openVoiceLesson(){
   if(currentSubject && currentTopic) title += ' — '+currentTopic;
   else if(currentSubject) title += ' — '+currentSubject.name;
   document.getElementById('voice-lesson-title').textContent = title;
-  setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
+  setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר');
   showScreen('voice-lesson');
-  const subj = currentSubject ? ' בנושא '+(currentTopic||currentSubject.name) : '';
-  addVoiceBubble('ai', 'היי '+(state.profile.name||'')+'! זה שיעור קולי'+subj+'. לחץ/י על המיקרופון ותוכל/י לדבר איתי.');
+  startCamera(); // מנסה להפעיל מצלמה אוטומטית; אם נדחה/לא זמין, נשאר "מצלמה כבויה"
+  generateActivity();
 }
 function setVoiceStatus(text){
   document.getElementById('voice-status').textContent = text;
@@ -1499,12 +1554,53 @@ function addVoiceBubble(role, text){
   wrap.appendChild(row);
   wrap.scrollTop = wrap.scrollHeight;
 }
+
+/* ---- camera ---- */
+async function startCamera(){
+  try{
+    webcamStream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById('user-webcam').srcObject = webcamStream;
+    document.getElementById('webcam-off-msg').classList.add('hidden');
+    document.getElementById('lc-video-btn').classList.add('active');
+  }catch(e){
+    document.getElementById('webcam-off-msg').classList.remove('hidden');
+    document.getElementById('lc-video-btn').classList.remove('active');
+  }
+}
+function stopCamera(){
+  if(webcamStream){ webcamStream.getTracks().forEach(t=>t.stop()); webcamStream = null; }
+  document.getElementById('user-webcam').srcObject = null;
+  document.getElementById('webcam-off-msg').classList.remove('hidden');
+  document.getElementById('lc-video-btn').classList.remove('active');
+}
+function toggleCamera(){
+  if(webcamStream) stopCamera();
+  else startCamera();
+}
+
+/* ---- sound toggle ---- */
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  document.getElementById('lc-sound-btn').classList.toggle('active', soundEnabled);
+  document.getElementById('lc-sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+  if(!soundEnabled) stopAISpeaking();
+}
+
+/* ---- robot mouth animation ---- */
+function startMouthAnim(){
+  const mouth = document.getElementById('robot-mouth');
+  clearInterval(mouthInterval);
+  mouthInterval = setInterval(()=> mouth.classList.toggle('open'), 180);
+}
+function stopMouthAnim(){
+  clearInterval(mouthInterval);
+  document.getElementById('robot-mouth').classList.remove('open');
+}
+
+/* ---- speech recognition (talk to the AI) ---- */
 function toggleListening(){
   if(isSpeaking){ stopAISpeaking(); }
-  if(isListening){
-    recognizer && recognizer.stop();
-    return;
-  }
+  if(isListening){ recognizer && recognizer.stop(); return; }
   const SR = getSpeechRecognition();
   if(!SR){ showToast('זיהוי דיבור לא נתמך בדפדפן הזה'); return; }
   recognizer = new SR();
@@ -1512,27 +1608,19 @@ function toggleListening(){
   recognizer.continuous = false;
   recognizer.interimResults = false;
   recognizer.maxAlternatives = 1;
-
   recognizer.onstart = ()=>{
     isListening = true;
-    document.getElementById('mic-btn').classList.add('listening');
+    document.getElementById('lc-mic-btn').classList.add('active');
     setVoiceStatus('מקשיב... 🎙️');
   };
   recognizer.onerror = (e)=>{
     isListening = false;
-    document.getElementById('mic-btn').classList.remove('listening');
-    if(e.error === 'not-allowed' || e.error === 'permission-denied'){
-      setVoiceStatus('צריך לאשר גישה למיקרופון בדפדפן');
-    } else if(e.error === 'no-speech'){
-      setVoiceStatus('לא נשמע דיבור, נסה/י שוב');
-    } else {
-      setVoiceStatus('שגיאה בזיהוי דיבור, נסה/י שוב');
-    }
+    document.getElementById('lc-mic-btn').classList.remove('active');
+    if(e.error === 'not-allowed' || e.error === 'permission-denied') setVoiceStatus('צריך לאשר גישה למיקרופון בדפדפן');
+    else if(e.error === 'no-speech') setVoiceStatus('לא נשמע דיבור, נסה/י שוב');
+    else setVoiceStatus('שגיאה בזיהוי דיבור, נסה/י שוב');
   };
-  recognizer.onend = ()=>{
-    isListening = false;
-    document.getElementById('mic-btn').classList.remove('listening');
-  };
+  recognizer.onend = ()=>{ isListening = false; document.getElementById('lc-mic-btn').classList.remove('active'); };
   recognizer.onresult = (event)=>{
     const said = event.results[0][0].transcript;
     if(said && said.trim()) handleVoiceInput(said.trim());
@@ -1547,7 +1635,7 @@ async function handleVoiceInput(text){
     let topicCtx = '';
     if(currentSubject && currentTopic) topicCtx = ' השיעור מתמקד בנושא "'+currentTopic+'" במקצוע '+currentSubject.name+'.';
     else if(currentSubject) topicCtx = ' השיעור מתמקד במקצוע '+currentSubject.name+'.';
-    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. היה חם, מעודד וסבלני, ותשאל שאלת המשך קצרה כדי לשמור על שיחה דו-כיוונית.' + NO_LATEX_RULE;
+    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
     const reply = await callClaude(apiMsgs, sys);
     const clean = sanitizeAIText(reply || 'סליחה, לא הצלחתי לענות.');
     addVoiceBubble('ai', clean);
@@ -1557,45 +1645,169 @@ async function handleVoiceInput(text){
     setVoiceStatus('שגיאה: ' + e.message);
   }
 }
+
+/* ---- text-to-speech ---- */
 function speakText(text){
-  if(!window.speechSynthesis){ setVoiceStatus('לחץ/י על המיקרופון כדי לדבר'); return; }
+  if(!soundEnabled){ setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); return; }
+  if(!window.speechSynthesis){ setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); return; }
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'he-IL';
   const voices = window.speechSynthesis.getVoices();
   const heVoice = voices.find(v=>v.lang && v.lang.startsWith('he'));
   if(heVoice) utter.voice = heVoice;
-  utter.onstart = ()=>{
-    isSpeaking = true;
-    document.getElementById('mic-btn').classList.add('speaking');
-    document.getElementById('stop-speak-btn').classList.remove('hidden');
-    setVoiceStatus('מדבר/ת... 🔊');
-  };
-  utter.onend = ()=>{
-    isSpeaking = false;
-    document.getElementById('mic-btn').classList.remove('speaking');
-    document.getElementById('stop-speak-btn').classList.add('hidden');
-    setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
-  };
-  utter.onerror = ()=>{
-    isSpeaking = false;
-    document.getElementById('mic-btn').classList.remove('speaking');
-    document.getElementById('stop-speak-btn').classList.add('hidden');
-    setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
-  };
+  utter.onstart = ()=>{ isSpeaking = true; startMouthAnim(); setVoiceStatus('מדבר/ת... 🔊'); };
+  utter.onend = ()=>{ isSpeaking = false; stopMouthAnim(); setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); };
+  utter.onerror = ()=>{ isSpeaking = false; stopMouthAnim(); setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); };
   window.speechSynthesis.speak(utter);
 }
 function stopAISpeaking(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   isSpeaking = false;
-  document.getElementById('mic-btn').classList.remove('speaking');
-  document.getElementById('stop-speak-btn').classList.add('hidden');
-  setVoiceStatus('לחץ/י על המיקרופון ותתחיל/י לדבר');
+  stopMouthAnim();
+  setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר');
 }
+
+/* ---- AI-generated visual activities (match / fill-blank) ---- */
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+async function generateActivity(){
+  const board = document.getElementById('lb-content');
+  document.getElementById('lb-instructions').textContent = 'מכין תרגיל...';
+  document.getElementById('lb-submit-btn').disabled = true;
+  board.innerHTML = `<div class="loader"><div class="spin-ic"></div></div>`;
+  const subj = currentSubject?.name || 'שפה ואוצר מילים כללי';
+  const topic = currentTopic || 'נושא כללי מהנה ללימוד';
+  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'. החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, באחד משני המבנים הבאים (בחר/י אקראית אחד מהם בכל פעם):\n1) תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.\n2) תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.' + NO_LATEX_RULE;
+  const userMsg = 'צור תרגיל חזותי במקצוע '+subj+', נושא: '+topic+'. JSON בלבד.';
+  try{
+    const text = await callClaude([{role:'user', content:userMsg}], sys);
+    const activity = extractJSON(text);
+    currentActivity = activity;
+    matchState = {selectedLeft:null, connections:{}};
+    const instructions = sanitizeAIText(activity.instructions || 'בוא/י נתרגל!');
+    document.getElementById('lb-instructions').textContent = instructions;
+    if(activity.type === 'match') renderMatchActivity(activity, board);
+    else renderFillBlankActivity(activity, board);
+    document.getElementById('lb-submit-btn').disabled = false;
+    document.getElementById('lb-submit-btn').textContent = '✅ הגשה';
+    addVoiceBubble('ai', instructions);
+    speakText(instructions);
+  }catch(e){
+    board.innerHTML = `
+      <div class="card" style="border-color:var(--coral);">
+        <b style="color:var(--coral);">⚠️ שגיאה בטעינת התרגיל</b>
+        <p style="font-size:12px; color:var(--text-dim); margin:8px 0;">${e.message}</p>
+        <button class="btn btn-teal btn-block" onclick="generateActivity()">נסה שוב</button>
+      </div>`;
+  }
+}
+function renderMatchActivity(activity, container){
+  const leftItems = activity.pairs.map((p,i)=>({id:'L'+i, text:sanitizeAIText(p.left)}));
+  const rightItems = shuffleArray(activity.pairs.map((p,i)=>({id:'R'+i, idx:i, text:sanitizeAIText(p.rightCorrect)})));
+  container.innerHTML = `
+    <div class="match-wrap" id="match-wrap">
+      <svg class="match-lines" id="match-lines"></svg>
+      <div class="match-col" id="match-col-left">
+        ${leftItems.map(it=>`<button class="match-item" data-id="${it.id}" onclick="selectMatchItem('${it.id}','left')">${it.text}</button>`).join('')}
+      </div>
+      <div class="match-col" id="match-col-right">
+        ${rightItems.map(it=>`<button class="match-item" data-id="${it.id}" data-idx="${it.idx}" onclick="selectMatchItem('${it.id}','right')">${it.text}</button>`).join('')}
+      </div>
+    </div>`;
+}
+function selectMatchItem(id, side){
+  if(side==='left'){
+    matchState.selectedLeft = id;
+    document.querySelectorAll('#match-col-left .match-item').forEach(b=>b.classList.toggle('sel', b.dataset.id===id));
+  } else {
+    if(!matchState.selectedLeft) return;
+    Object.keys(matchState.connections).forEach(k=>{ if(matchState.connections[k]===id) delete matchState.connections[k]; });
+    matchState.connections[matchState.selectedLeft] = id;
+    matchState.selectedLeft = null;
+    document.querySelectorAll('#match-col-left .match-item').forEach(b=>b.classList.remove('sel'));
+    drawMatchLines();
+  }
+}
+function drawMatchLines(){
+  const svg = document.getElementById('match-lines');
+  const wrap = document.getElementById('match-wrap');
+  if(!svg || !wrap) return;
+  const wrapRect = wrap.getBoundingClientRect();
+  svg.innerHTML = '';
+  Object.entries(matchState.connections).forEach(([leftId, rightId])=>{
+    const l = document.querySelector(`#match-col-left [data-id="${leftId}"]`);
+    const r = document.querySelector(`#match-col-right [data-id="${rightId}"]`);
+    if(!l || !r) return;
+    const lr = l.getBoundingClientRect(), rr = r.getBoundingClientRect();
+    const x1 = lr.right - wrapRect.left, y1 = lr.top - wrapRect.top + lr.height/2;
+    const x2 = rr.left - wrapRect.left, y2 = rr.top - wrapRect.top + rr.height/2;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', '#2dd4bf'); line.setAttribute('stroke-width', '3'); line.setAttribute('stroke-linecap','round');
+    svg.appendChild(line);
+  });
+}
+function renderFillBlankActivity(activity, container){
+  container.innerHTML = activity.sentences.map((s,i)=>{
+    const parts = sanitizeAIText(s.text).split('___');
+    return `<div class="fillblank-row">${parts[0]||''}<input class="fillblank-input" id="fb-${i}">${parts[1]||''}</div>`;
+  }).join('');
+}
+function checkMatchAnswers(){
+  let correctCount = 0;
+  const total = currentActivity.pairs.length;
+  Object.entries(matchState.connections).forEach(([leftId, rightId])=>{
+    const leftIdx = parseInt(leftId.slice(1));
+    const rightBtn = document.querySelector(`[data-id="${rightId}"]`);
+    const rightIdx = rightBtn ? parseInt(rightBtn.dataset.idx) : -1;
+    const isCorrect = leftIdx === rightIdx;
+    document.querySelector(`[data-id="${leftId}"]`)?.classList.add(isCorrect?'correct':'wrong');
+    rightBtn?.classList.add(isCorrect?'correct':'wrong');
+    if(isCorrect) correctCount++;
+  });
+  return {correctCount, total};
+}
+function checkFillBlankAnswers(){
+  let correctCount = 0;
+  const total = currentActivity.sentences.length;
+  currentActivity.sentences.forEach((s,i)=>{
+    const input = document.getElementById('fb-'+i);
+    const val = (input.value||'').trim();
+    const accepted = (s.accepted && s.accepted.length ? s.accepted : [s.answer]).map(a=>(a||'').trim());
+    const isCorrect = accepted.some(a=> a && a===val);
+    input.classList.add(isCorrect?'correct-input':'wrong-input');
+    input.disabled = true;
+    if(isCorrect) correctCount++;
+  });
+  return {correctCount, total};
+}
+function submitActivity(){
+  if(!currentActivity) return;
+  document.getElementById('lb-submit-btn').disabled = true;
+  const result = currentActivity.type==='match' ? checkMatchAnswers() : checkFillBlankAnswers();
+  const allCorrect = result.total>0 && result.correctCount === result.total;
+  const feedback = allCorrect
+    ? `כל הכבוד! פתרת נכון את כל ${result.total} התרגילים! ממשיכים הלאה.`
+    : `פתרת נכון ${result.correctCount} מתוך ${result.total}. בוא/י נראה מה לתקן, וממשיכים לתרגיל הבא.`;
+  addVoiceBubble('ai', feedback);
+  speakText(feedback);
+  addCoins(allCorrect ? 8 : 3);
+  markActivity(2);
+  setTimeout(()=> generateActivity(), 2600);
+}
+
 function exitVoiceLesson(){
   if(recognizer) try{ recognizer.stop(); }catch(e){}
   if(window.speechSynthesis) window.speechSynthesis.cancel();
+  stopCamera();
+  stopMouthAnim();
   isListening = false; isSpeaking = false;
+  currentActivity = null;
   showScreen('topics');
 }
 
