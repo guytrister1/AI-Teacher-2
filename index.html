@@ -1647,15 +1647,36 @@ async function handleVoiceInput(text){
 }
 
 /* ---- text-to-speech ---- */
+let cachedVoices = [];
+function loadTTSVoices(){
+  if(window.speechSynthesis) cachedVoices = window.speechSynthesis.getVoices();
+}
+if(window.speechSynthesis){
+  loadTTSVoices();
+  window.speechSynthesis.onvoiceschanged = loadTTSVoices;
+}
+function pickHebrewVoice(){
+  let list = cachedVoices && cachedVoices.length ? cachedVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
+  if(!list.length) return null;
+  // מעדיפים קול "he-IL" מדויק, אחר כך כל קול שמתחיל ב-he
+  return list.find(v=>v.lang==='he-IL') || list.find(v=>v.lang && v.lang.toLowerCase().startsWith('he')) || null;
+}
 function speakText(text){
   if(!soundEnabled){ setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); return; }
   if(!window.speechSynthesis){ setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); return; }
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'he-IL';
-  const voices = window.speechSynthesis.getVoices();
-  const heVoice = voices.find(v=>v.lang && v.lang.startsWith('he'));
-  if(heVoice) utter.voice = heVoice;
+  utter.rate = 0.95;
+  const heVoice = pickHebrewVoice();
+  if(heVoice){
+    utter.voice = heVoice;
+  } else {
+    // אין קול עברי מותקן במכשיר - זה גורם להקראה שגויה (כאילו קול אנגלי מנסה לקרוא עברית אות-אות).
+    // מדברים בכל זאת (כדי שלא יהיה שקט מוחלט), אבל מזהירים שצריך להתקין קול עברי במכשיר.
+    setVoiceStatus('⚠️ לא נמצא קול עברי במכשיר - יש להתקין קול עברי בהגדרות (ראה הודעה)');
+    showToast('אין קול עברי מותקן - ההקראה עלולה להישמע משובשת. בדוק/י הגדרות TTS/שפה במכשיר.');
+  }
   utter.onstart = ()=>{ isSpeaking = true; startMouthAnim(); setVoiceStatus('מדבר/ת... 🔊'); };
   utter.onend = ()=>{ isSpeaking = false; stopMouthAnim(); setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); };
   utter.onerror = ()=>{ isSpeaking = false; stopMouthAnim(); setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); };
