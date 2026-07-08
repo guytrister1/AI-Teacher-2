@@ -343,6 +343,8 @@ input,select,textarea{font-family:var(--font-b);}
 .lesson-board{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
 .lb-instructions{font-size:13px; font-weight:700; color:var(--gold); margin-bottom:12px; line-height:1.5;}
 .lb-content{margin-bottom:14px; min-height:80px;}
+.lb-diagram{background:#0b0e22; border:1px solid var(--line); border-radius:14px; margin-bottom:12px; overflow:hidden;}
+.lb-diagram svg{width:100%; height:auto; display:block;}
 .btn-submit-lesson{
   width:100%; padding:13px; border-radius:12px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff;
   font-weight:800; font-size:14.5px; border:none;
@@ -591,6 +593,7 @@ input,select,textarea{font-family:var(--font-b);}
 
   <div class="lesson-board">
     <div class="lb-instructions" id="lb-instructions">טוען שיעור...</div>
+    <div class="lb-diagram hidden" id="lb-diagram"></div>
     <div class="lb-content" id="lb-content"></div>
     <button class="btn-submit-lesson" id="lb-submit-btn" onclick="submitActivity()" disabled>✅ הגשה</button>
   </div>
@@ -1666,7 +1669,12 @@ async function handleVoiceInput(text){
     else if(currentSubject) topicCtx = ' השיעור מתמקד במקצוע '+currentSubject.name+'.';
     const gradeForLesson = customGradeOverride || state.profile.grade || '';
     const diffGuide = DIFFICULTY_GUIDE[voiceLessonDifficulty] || '';
-    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+gradeForLesson+', ברמת קושי '+voiceLessonDifficulty+'.'+topicCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. הנחיה קונקרטית לרמה שנבחרה: '+diffGuide+' היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
+    let activityCtx = '';
+    if(currentActivity){
+      const kind = currentActivity.type==='match' ? 'תרגיל התאמה (מחברים פריטים מהעמודה השמאלית לימין)' : 'תרגיל השלמת משפטים';
+      activityCtx = ' חשוב: כרגע מוצג לתלמיד/ה על המסך '+kind+', שהוא/היא פותר/ת ישירות על ידי לחיצות/הקלדה בלוח, ומגיש/ה בעצמו/ה בכפתור "הגשה". אל תיצור תרגיל חדש בתוך השיחה הקולית ואל תכתיב שאלות/תרגילים בעל פה - זה יבלבל, כי כבר יש תרגיל פעיל על המסך. תפקידך כרגע הוא רק: לענות על שאלות, לתת רמז קטן אם מתבקש, ולעודד להמשיך לפתור את מה שמוצג. אם אמרו לך "טוב"/"בסדר"/"הבנתי" - פשוט עודד/י בקצרה להמשיך לפתור את התרגיל שעל המסך, בלי לפתוח תרגיל חדש בעצמך.';
+    }
+    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+gradeForLesson+', ברמת קושי '+voiceLessonDifficulty+'.'+topicCtx+activityCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. הנחיה קונקרטית לרמה שנבחרה: '+diffGuide+' היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
     const reply = await callClaude(apiMsgs, sys);
     const clean = sanitizeAIText(reply || 'סליחה, לא הצלחתי לענות.');
     addVoiceBubble('ai', clean);
@@ -1728,13 +1736,15 @@ function shuffleArray(arr){
 }
 async function generateActivity(){
   const board = document.getElementById('lb-content');
+  const diagramBox = document.getElementById('lb-diagram');
   document.getElementById('lb-instructions').textContent = 'מכין תרגיל...';
   document.getElementById('lb-submit-btn').disabled = true;
+  diagramBox.classList.add('hidden'); diagramBox.innerHTML = '';
   board.innerHTML = `<div class="loader"><div class="spin-ic"></div></div>`;
   const subj = currentSubject?.name || 'שפה ואוצר מילים כללי';
   const topic = currentTopic || 'נושא כללי מהנה ללימוד';
-  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(customGradeOverride || state.profile.grade||'')+', ברמת קושי '+voiceLessonDifficulty+' ('+(DIFFICULTY_GUIDE[voiceLessonDifficulty]||'')+'). החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, באחד משני המבנים הבאים (בחר/י אקראית אחד מהם בכל פעם):\n1) תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.\n2) תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.' + NO_LATEX_RULE;
-  const userMsg = 'צור תרגיל חזותי במקצוע '+subj+', נושא: '+topic+', רמת קושי: '+voiceLessonDifficulty+'. JSON בלבד.';
+  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(customGradeOverride || state.profile.grade||'')+', ברמת קושי '+voiceLessonDifficulty+' ('+(DIFFICULTY_GUIDE[voiceLessonDifficulty]||'')+'). החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, באחד משני המבנים הבאים (בחר/י אקראית אחד מהם בכל פעם):\n1) תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.\n2) תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.\nבנוסף, אם הנושא נהנה מהמחשה חזותית אמיתית (כמו צורות גיאומטריות, שברים, זוויות, גרפים פשוטים) - הוסף גם שדה עליון בשם "diagram" שמצייר את זה ממש (לא מתאר במילים!): {"diagram":{"shapes":[{"kind":"polygon","points":[[x1,y1],[x2,y2],[x3,y3]],"fill":"#הקסקוד","stroke":"#ffffff"},{"kind":"circle","cx":0,"cy":0,"r":0,"fill":"#הקסקוד"},{"kind":"rect","x":0,"y":0,"w":0,"h":0,"fill":"#הקסקוד"},{"kind":"line","x1":0,"y1":0,"x2":0,"y2":0,"stroke":"#הקסקוד","width":2},{"kind":"text","x":0,"y":0,"text":"תווית","color":"#ffffff"}]}}. כל הקואורדינטות חייבות להיות בטווח 0-300 (רוחב) ו-0-200 (גובה). חשוב מאוד: אם אפשר לצייר צורה (כמו משולש עם צלעות מסומנות) - תמיד עדיף לצייר אותה ב-diagram ולא לתאר אותה רק במילים בתוך instructions/pairs/sentences.' + NO_LATEX_RULE;
+  const userMsg = 'צור תרגיל חזותי במקצוע '+subj+', נושא: '+topic+', רמת קושי: '+voiceLessonDifficulty+'. אם רלוונטי, כלול diagram מצויר. JSON בלבד.';
   try{
     const text = await callClaude([{role:'user', content:userMsg}], sys);
     const activity = extractJSON(text);
@@ -1742,6 +1752,10 @@ async function generateActivity(){
     matchState = {selectedLeft:null, connections:{}};
     const instructions = sanitizeAIText(activity.instructions || 'בוא/י נתרגל!');
     document.getElementById('lb-instructions').textContent = instructions;
+    if(activity.diagram && Array.isArray(activity.diagram.shapes) && activity.diagram.shapes.length){
+      renderDiagram(activity.diagram, diagramBox);
+      diagramBox.classList.remove('hidden');
+    }
     if(activity.type === 'match') renderMatchActivity(activity, board);
     else renderFillBlankActivity(activity, board);
     document.getElementById('lb-submit-btn').disabled = false;
@@ -1756,6 +1770,29 @@ async function generateActivity(){
         <button class="btn btn-teal btn-block" onclick="generateActivity()">נסה שוב</button>
       </div>`;
   }
+}
+function renderDiagram(diagram, container){
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const parts = diagram.shapes.map(sh=>{
+    if(sh.kind==='polygon' && Array.isArray(sh.points)){
+      const pts = sh.points.map(p=>p[0]+','+p[1]).join(' ');
+      return `<polygon points="${pts}" fill="${esc(sh.fill||'#2dd4bf')}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="2"/>`;
+    }
+    if(sh.kind==='circle'){
+      return `<circle cx="${sh.cx||0}" cy="${sh.cy||0}" r="${sh.r||10}" fill="${esc(sh.fill||'#2dd4bf')}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="2"/>`;
+    }
+    if(sh.kind==='rect'){
+      return `<rect x="${sh.x||0}" y="${sh.y||0}" width="${sh.w||10}" height="${sh.h||10}" fill="${esc(sh.fill||'#2dd4bf')}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="2"/>`;
+    }
+    if(sh.kind==='line'){
+      return `<line x1="${sh.x1||0}" y1="${sh.y1||0}" x2="${sh.x2||0}" y2="${sh.y2||0}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="${sh.width||2}"/>`;
+    }
+    if(sh.kind==='text'){
+      return `<text x="${sh.x||0}" y="${sh.y||0}" fill="${esc(sh.color||'#fff')}" font-size="13" font-family="Assistant,sans-serif" text-anchor="middle">${esc(sh.text)}</text>`;
+    }
+    return '';
+  }).join('');
+  container.innerHTML = `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">${parts}</svg>`;
 }
 function renderMatchActivity(activity, container){
   const leftItems = activity.pairs.map((p,i)=>({id:'L'+i, text:sanitizeAIText(p.left)}));
