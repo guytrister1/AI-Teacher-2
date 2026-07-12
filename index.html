@@ -1,408 +1,2557 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>משחק עוגיות</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-database-compat.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1); min-height: 100vh; display: flex; direction: rtl; }
-        .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; z-index: 10000; }
-        .login-form { background: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); min-width: 350px; }
-        .login-form h2 { color: #2C3E50; margin-bottom: 25px; font-size: 2rem; }
-        .login-form input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem; text-align: center; }
-        .login-form button { background: #4ECDC4; color: white; padding: 12px 25px; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin: 10px 5px; }
-        .login-form button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
-        .remember-me { display: flex; align-items: center; justify-content: center; margin: 15px 0; }
-        .remember-me input { width: auto; margin-left: 8px; }
-        .settings-button { position: fixed; top: 20px; right: 20px; background: #34495E; color: white; padding: 10px 20px; border: none; border-radius: 15px; font-size: 1rem; cursor: pointer; z-index: 1000; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: none; justify-content: center; align-items: center; z-index: 5000; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 500px; max-height: 80vh; overflow-y: auto; }
-        .modal-content h3 { color: #2C3E50; margin-bottom: 20px; font-size: 1.8rem; }
-        .modal-content button { background: #4ECDC4; color: white; padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; margin: 10px 5px; }
-        .game-container { display: flex; width: 100%; min-height: 100vh; }
-        .main-game { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .stats { background: rgba(255, 255, 255, 0.25); border-radius: 25px; padding: 25px; margin-bottom: 30px; text-align: center; border: 2px solid rgba(255, 255, 255, 0.3); min-width: 300px; }
-        .cookie-count { font-size: 3.5rem; font-weight: bold; color: #FF8C00; margin-bottom: 10px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        .cookies-per-second { font-size: 1.3rem; color: #2C3E50; font-weight: bold; background: rgba(255, 255, 255, 0.7); padding: 8px 16px; border-radius: 15px; }
-        .cookie-container { position: relative; margin: 30px 0; }
-        .cookie { width: 250px; height: 250px; background: radial-gradient(circle at 30% 30%, #DEB887, #D2691E, #8B4513); border-radius: 50%; cursor: pointer; border: 8px solid #654321; box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); animation: cookieFloat 4s ease-in-out infinite; }
-        @keyframes cookieFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
-        .cookie:hover { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-        .cookie:active { transform: scale(0.9); }
-        .click-effect { position: absolute; color: #FFD700; font-size: 2.5rem; font-weight: bold; pointer-events: none; animation: floatUp 1.2s ease-out forwards; z-index: 1000; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-120px) scale(1.5); } }
-        .shop { width: 400px; background: rgba(255, 255, 255, 0.15); border-left: 2px solid rgba(255, 255, 255, 0.3); padding: 20px; overflow-y: auto; max-height: 100vh; }
-        .shop h2 { color: #2C3E50; font-size: 2.2rem; margin-bottom: 20px; text-align: center; }
-        .shop-section { margin-bottom: 25px; }
-        .shop-section h3 { color: #34495E; font-size: 1.4rem; margin-bottom: 15px; text-align: center; background: rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 10px; }
-        .shop-item { background: rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 15px; margin-bottom: 12px; border: 2px solid rgba(255, 255, 255, 0.3); cursor: pointer; }
-        .shop-item:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-3px); }
-        .shop-item.disabled { opacity: 0.4; cursor: not-allowed; }
-        .item-name { font-size: 1.2rem; font-weight: bold; color: #2C3E50; }
-        .item-count { background: linear-gradient(45deg, #FF6B6B, #4ECDC4); color: white; padding: 4px 12px; border-radius: 15px; font-size: 0.9rem; font-weight: bold; }
-        .item-description { font-size: 0.95rem; color: #34495E; margin-bottom: 10px; }
-        .item-price { font-size: 1.1rem; font-weight: bold; color: #E67E22; text-align: center; background: rgba(255, 255, 255, 0.4); padding: 8px; border-radius: 10px; margin-top: 10px; }
-        .error-message { color: #E74C3C; font-weight: bold; margin: 10px 0; }
-        .success-message { color: #27AE60; font-weight: bold; margin: 10px 0; }
-        .close-button { background: #E74C3C !important; }
-        @media (max-width: 768px) { .game-container { flex-direction: column; } .shop { width: 100%; } .cookie { width: 180px; height: 180px; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>המורה החכם | SmartLearn AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0e22;
+  --bg2:#12163a;
+  --panel:#161a42;
+  --panel2:#1c2150;
+  --line:rgba(242,224,177,.12);
+  --gold:#f2b84b;
+  --gold-dim:#8a6b2c;
+  --teal:#2dd4bf;
+  --coral:#ff6b6b;
+  --violet:#8b7cf6;
+  --text:#f3f1ea;
+  --text-dim:#a9aecb;
+  --radius:18px;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --font-d:'Rubik',sans-serif;
+  --font-b:'Assistant',sans-serif;
+}
+body.light{
+  --bg:#f5f3ec;
+  --bg2:#eee9dc;
+  --panel:#ffffff;
+  --panel2:#fbf8f0;
+  --line:rgba(30,20,60,.1);
+  --text:#1c1c2e;
+  --text-dim:#5b5b78;
+  --shadow: 0 8px 22px rgba(30,20,60,.1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-b);
+  background:radial-gradient(1200px 800px at 80% -10%, var(--bg2), var(--bg));
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  transition:background .4s,color .4s;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(242,184,75,.5) 0, transparent 60%),
+    radial-gradient(1.5px 1.5px at 70% 20%, rgba(45,212,191,.5) 0, transparent 60%),
+    radial-gradient(1.5px 1.5px at 40% 80%, rgba(139,124,246,.5) 0, transparent 60%),
+    radial-gradient(1px 1px at 85% 65%, rgba(255,255,255,.4) 0, transparent 60%),
+    radial-gradient(1px 1px at 10% 90%, rgba(255,255,255,.3) 0, transparent 60%);
+  pointer-events:none; z-index:0; opacity:.8;
+}
+body.light::before{opacity:0;}
+.app{position:relative; z-index:1; max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+.screen{display:none; flex:1; flex-direction:column; padding:20px 16px 90px;}
+.screen.active{display:flex; animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+h1,h2,h3{font-family:var(--font-d);}
+button{font-family:var(--font-b); cursor:pointer; border:none;}
+input,select,textarea{font-family:var(--font-b);}
+
+.btn{
+  padding:14px 20px; border-radius:14px; font-weight:700; font-size:15px;
+  background:var(--panel2); color:var(--text); border:1px solid var(--line);
+  transition:transform .15s, box-shadow .15s; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn:active{transform:scale(.97);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#e0982b); color:#22160a; box-shadow:0 6px 18px rgba(242,184,75,.35);}
+.btn-teal{background:linear-gradient(135deg,var(--teal),#1a9c8c); color:#04211d; box-shadow:0 6px 18px rgba(45,212,191,.3);}
+.btn-ghost{background:transparent; border:1px solid var(--line); color:var(--text-dim);}
+.btn-block{width:100%;}
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px; box-shadow:var(--shadow);
+}
+.pill{
+  display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:100px;
+  background:var(--panel2); border:1px solid var(--line); font-size:12px; color:var(--text-dim); font-weight:600;
+}
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+  position:sticky; top:0; z-index:5; backdrop-filter:blur(10px);
+  background:linear-gradient(to bottom, var(--bg) 70%, transparent);
+}
+.topbar h2{font-size:19px;}
+.back-btn{
+  width:38px; height:38px; border-radius:12px; background:var(--panel2); border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--text);
+}
+.section-title{font-size:14px; color:var(--gold); font-weight:700; margin:22px 0 10px; display:flex; align-items:center; gap:6px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.hidden{display:none !important;}
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px; font-weight:600;}
+.field select, .field input{
+  width:100%; padding:12px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px;
+}
+.progress-outer{height:10px; background:var(--panel2); border-radius:100px; overflow:hidden; border:1px solid var(--line);}
+.progress-inner{height:100%; background:linear-gradient(90deg,var(--gold),var(--coral)); border-radius:100px; transition:width .5s;}
+
+.bottomnav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:520px;
+  background:var(--panel); border-top:1px solid var(--line); display:flex; z-index:10;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+.navbtn{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; color:var(--text-dim); font-size:11px; font-weight:600; padding:6px 0; border-radius:10px;}
+.navbtn.active{color:var(--gold);}
+.navbtn .ic{font-size:20px;}
+
+#screen-splash{align-items:center; justify-content:center; text-align:center; padding:40px 24px;}
+.logo-orb{
+  width:96px; height:96px; border-radius:28px; margin:0 auto 18px;
+  background:conic-gradient(from 210deg, var(--gold), var(--coral), var(--violet), var(--teal), var(--gold));
+  display:flex; align-items:center; justify-content:center; font-size:44px;
+  animation:spin 10s linear infinite; box-shadow:0 0 40px rgba(242,184,75,.35);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo-orb span{display:inline-block; animation:counterspin 10s linear infinite;}
+@keyframes counterspin{to{transform:rotate(-360deg)}}
+#screen-splash h1{font-size:30px; margin-bottom:6px;}
+#screen-splash p.tag{color:var(--text-dim); margin-bottom:30px; font-size:14px;}
+.auth-stack{width:100%; display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
+.auth-btn{background:var(--panel); border:1px solid var(--line); color:var(--text); font-weight:600; font-size:14px;}
+
+.step-dots{display:flex; gap:6px; justify-content:center; margin-bottom:20px;}
+.step-dots span{width:8px; height:8px; border-radius:50%; background:var(--line);}
+.step-dots span.on{background:var(--gold);}
+.avatar-pick{display:flex; flex-wrap:wrap; gap:10px; justify-content:center;}
+.emoji-opt{width:52px; height:52px; border-radius:16px; background:var(--panel2); border:2px solid transparent; font-size:26px; display:flex; align-items:center; justify-content:center;}
+.emoji-opt.sel{border-color:var(--gold);}
+
+.home-header{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
+.avatar-circle{
+  width:58px; height:58px; border-radius:18px; display:flex; align-items:center; justify-content:center;
+  font-size:28px; border:2px solid var(--gold); position:relative; flex-shrink:0;
+}
+.home-header .greet{flex:1;}
+.home-header .greet h2{font-size:17px; margin-bottom:2px;}
+.stat-row{display:flex; gap:8px;}
+.stat-chip{display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:var(--text-dim);}
+.ring-wrap{position:relative; width:74px; height:74px; flex-shrink:0;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-txt{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; font-size:11px; font-weight:800;}
+.mission-item{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+.mission-item:last-child{border-bottom:none;}
+.mission-check{width:22px; height:22px; border-radius:7px; border:2px solid var(--teal); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;}
+.mission-check.done{background:var(--teal); color:#04211d;}
+.mission-item .mtext{flex:1; font-size:13.5px;}
+.mission-item .mxp{font-size:11px; color:var(--gold); font-weight:700;}
+.big-actions{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:18px 0;}
+.big-actions button{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--text);}
+.big-actions .ic2{font-size:22px;}
+.tip-card{background:linear-gradient(135deg, rgba(139,124,246,.18), rgba(45,212,191,.1)); border:1px solid var(--line);}
+.chart-canvas{width:100%; height:110px; display:block;}
+
+.subject-tile{
+  background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 8px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.subject-tile .ic3{font-size:26px;}
+.subject-tile .sname{font-size:11.5px; font-weight:700;}
+.subject-tile .sprog{width:100%; height:4px; background:var(--panel2); border-radius:4px; overflow:hidden; margin-top:2px;}
+.subject-tile .sprog i{display:block; height:100%; background:var(--teal);}
+.search-box{display:flex; align-items:center; gap:8px; background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:10px 14px; margin-bottom:14px;}
+.search-box input{background:none; border:none; outline:none; color:var(--text); flex:1; font-size:14px;}
+
+.topic-row{display:flex; align-items:center; justify-content:space-between; padding:14px; border-radius:14px; background:var(--panel); border:1px solid var(--line); margin-bottom:10px;}
+.topic-row .tname{font-weight:700; font-size:14px;}
+.topic-row .tsub{font-size:11px; color:var(--text-dim);}
+.diff-tabs{display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px;}
+.diff-tab{padding:8px 14px; border-radius:100px; background:var(--panel2); border:1px solid var(--line); font-size:12.5px; font-weight:700; color:var(--text-dim); white-space:nowrap;}
+.diff-tab.sel{background:var(--gold); color:#22160a; border-color:var(--gold);}
+
+#screen-chat{padding-bottom:150px;}
+.chat-log{display:flex; flex-direction:column; gap:12px; flex:1; padding:6px 2px;}
+.msg{padding:12px 14px; border-radius:16px; font-size:14px; line-height:1.6; white-space:pre-wrap;}
+.msg.ai{align-self:flex-start; background:var(--panel); border:1px solid var(--line); border-bottom-left-radius:4px;}
+.msg.user{align-self:flex-end; background:linear-gradient(135deg,var(--violet),#6a5acd); color:#fff; border-bottom-right-radius:4px;}
+.quick-actions{display:flex; gap:8px; overflow-x:auto; padding:10px 2px; margin-bottom:6px;}
+.quick-actions button{white-space:nowrap; background:var(--panel2); border:1px solid var(--line); color:var(--text-dim); border-radius:100px; padding:8px 14px; font-size:12px; font-weight:700;}
+.chat-footer{
+  position:fixed; bottom:64px; left:50%; transform:translateX(-50%); width:100%; max-width:520px;
+  background:var(--bg); z-index:9;
+}
+.chat-input-bar{
+  display:flex; gap:8px; padding:10px 16px; border-top:1px solid var(--line);
+}
+.chat-input-bar input{flex:1; padding:12px 16px; border-radius:100px; background:var(--panel2); border:1px solid var(--line); color:var(--text);}
+.chat-input-bar button{width:46px; height:46px; border-radius:50%; background:var(--gold); color:#22160a; font-size:18px; flex-shrink:0;}
+.typing-dots span{display:inline-block; width:6px; height:6px; background:var(--text-dim); border-radius:50%; margin:0 2px; animation:blink 1.2s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.2s;} .typing-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,80%,100%{opacity:.2} 40%{opacity:1}}
+
+.q-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:16px;}
+.q-meta{display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-bottom:10px;}
+.q-text{font-size:16px; font-weight:700; line-height:1.6; margin-bottom:16px;}
+.opt-btn{
+  display:block; width:100%; text-align:right; padding:14px 16px; border-radius:14px; background:var(--panel2);
+  border:1px solid var(--line); margin-bottom:10px; font-size:14px; color:var(--text); transition:.15s;
+}
+.opt-btn.correct{background:rgba(45,212,191,.2); border-color:var(--teal);}
+.opt-btn.wrong{background:rgba(255,107,107,.2); border-color:var(--coral);}
+.opt-btn.disabled{pointer-events:none; opacity:.7;}
+.explain-box{background:var(--panel2); border-radius:12px; padding:14px; font-size:13.5px; color:var(--text-dim); margin-top:12px; border-inline-start:3px solid var(--teal); display:none;}
+.explain-box.show{display:block;}
+.timer-badge{font-weight:800; color:var(--coral); font-variant-numeric:tabular-nums;}
+.loader{display:flex; align-items:center; justify-content:center; gap:10px; padding:40px 0; color:var(--text-dim); font-size:14px;}
+.spin-ic{width:22px; height:22px; border:3px solid var(--line); border-top-color:var(--gold); border-radius:50%; animation:sp .8s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.result-hero{text-align:center; padding:20px 0;}
+.result-hero .score{font-size:52px; font-family:var(--font-d); font-weight:800; color:var(--gold);}
+.result-hero p{color:var(--text-dim); font-size:13px;}
+
+.badge-card{display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px;}
+.badge-ic{width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; background:var(--panel2); flex-shrink:0;}
+.badge-card.unlocked .badge-ic{background:linear-gradient(135deg,var(--gold),#e0982b);}
+.badge-card.locked{opacity:.45;}
+.badge-name{font-weight:700; font-size:14px;}
+.badge-desc{font-size:11.5px; color:var(--text-dim);}
+
+.avatar-preview{width:120px; height:120px; border-radius:32px; margin:10px auto 20px; display:flex; align-items:center; justify-content:center; font-size:56px; border:3px solid var(--gold); position:relative;}
+.color-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:16px;}
+.color-dot{width:34px; height:34px; border-radius:50%; border:3px solid transparent;}
+.color-dot.sel{border-color:var(--text);}
+.shop-item{display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:10px;}
+.shop-item .sic{font-size:26px; width:44px; text-align:center;}
+.shop-item .sinfo{flex:1;}
+.shop-item .sname2{font-weight:700; font-size:13.5px;}
+.buy-btn{background:var(--gold); color:#22160a; font-weight:800; font-size:12px; padding:8px 14px; border-radius:10px;}
+.buy-btn:disabled{background:var(--panel2); color:var(--text-dim);}
+
+.mistake-card{background:var(--panel); border:1px solid var(--line); border-inline-start:3px solid var(--coral); border-radius:14px; padding:12px 14px; margin-bottom:10px;}
+
+.stat-block{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);}
+.stat-block:last-child{border-bottom:none;}
+.toggle{width:44px; height:26px; border-radius:100px; background:var(--panel2); border:1px solid var(--line); position:relative; flex-shrink:0;}
+.toggle.on{background:var(--teal);}
+.toggle::after{content:""; position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:.2s;}
+.toggle.on::after{transform:translateX(-18px);}
+
+.future-card{background:var(--panel); border:1px dashed var(--line); border-radius:14px; padding:14px; margin-bottom:10px; display:flex; gap:12px; align-items:center;}
+.future-card .fic{font-size:24px;}
+.soon-pill{background:var(--violet); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:100px; margin-inline-start:auto;}
+
+#toast{position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-60px); background:var(--panel); border:1px solid var(--gold); color:var(--text); padding:12px 20px; border-radius:100px; font-size:13px; font-weight:700; z-index:100; transition:transform .3s; box-shadow:var(--shadow);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+::-webkit-scrollbar{width:0; height:0;}
+
+.wb-modal{
+  position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center; padding:14px;
+}
+.wb-modal.hidden{display:none;}
+.wb-panel{
+  width:100%; max-width:500px; max-height:92vh; background:var(--bg2); border-radius:20px;
+  border:1px solid var(--line); box-shadow:var(--shadow); display:flex; flex-direction:column; overflow:hidden;
+}
+.wb-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line);}
+.wb-header b{font-size:14px;}
+.wb-close-btn{width:32px; height:32px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:16px;}
+.wb-canvas-wrap{background:#fdfaf2; margin:12px; border-radius:14px; overflow:hidden; border:1px solid var(--line); touch-action:none;}
+#wb-canvas{display:block; width:100%; height:320px;}
+.wb-toolbar{display:flex; gap:8px; padding:0 12px 12px;}
+.wb-toolbar button{flex:1; padding:10px; border-radius:12px; font-size:12.5px; font-weight:700;}
+.wb-response{margin:0 12px 12px; padding:12px; border-radius:12px; background:var(--panel2); border-inline-start:3px solid var(--teal); font-size:13px; line-height:1.6; max-height:160px; overflow-y:auto; display:none;}
+.wb-response.show{display:block;}
+.wb-under-btn{background:none; border:none; color:var(--teal); font-size:12px; font-weight:700; padding:6px 2px 2px; display:flex; align-items:center; gap:4px; cursor:pointer;}
+
+/* ---------- message menu / code blocks / reply ---------- */
+.msg{user-select:text; -webkit-user-select:text;}
+.msg-row{display:flex; flex-direction:column; max-width:82%;}
+.msg-row.user{align-self:flex-end; align-items:flex-end;}
+.msg-row.ai{align-self:flex-start; align-items:flex-start;}
+.msg-toolbar{display:flex; align-items:center; margin-bottom:2px; align-self:flex-start !important;}
+.msg-menu-wrap{position:relative;}
+.msg-menu-btn{background:none; border:none; color:var(--text-dim); font-size:15px; padding:2px 6px; border-radius:8px; cursor:pointer; line-height:1;}
+.msg-menu-btn:hover{background:var(--panel2);}
+.msg-dropdown{position:absolute; top:22px; left:0; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); z-index:20; min-width:140px; overflow:hidden; display:none;}
+.msg-dropdown.show{display:block;}
+.msg-dropdown button{display:flex; align-items:center; gap:8px; width:100%; text-align:right; padding:9px 12px; background:none; border:none; color:var(--text); font-size:12.5px; font-weight:600;}
+.msg-dropdown button:hover{background:var(--panel2);}
+.code-block-wrap{position:relative; margin:6px 0; background:#11142b; border:1px solid var(--line); border-radius:10px; padding:12px 34px 12px 12px; direction:ltr; text-align:left;}
+.code-block-wrap pre{font-family:monospace; font-size:12.5px; color:#d8e0ff; white-space:pre-wrap; word-break:break-word; margin:0;}
+.code-copy-btn{position:absolute; top:6px; left:6px; background:var(--panel2); border:1px solid var(--line); border-radius:7px; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-dim); cursor:pointer;}
+.code-copy-btn:hover{color:var(--gold);}
+.code-copy-tip{position:absolute; top:-24px; left:0; background:#000; color:#fff; font-size:10px; padding:3px 7px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s;}
+.code-copy-btn:hover .code-copy-tip{opacity:1;}
+.reply-preview{display:flex; align-items:center; gap:8px; background:var(--panel2); border-inline-start:3px solid var(--teal); border-radius:10px; padding:8px 10px; margin:0 16px 6px;}
+.reply-preview .rp-text{flex:1; font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.reply-preview .rp-close{background:none; border:none; color:var(--text-dim); font-size:15px; padding:2px 6px;}
+.msg .quoted-ref{background:rgba(255,255,255,.08); border-inline-start:3px solid rgba(255,255,255,.4); border-radius:8px; padding:6px 8px; font-size:11.5px; opacity:.85; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+/* ---------- games hub ---------- */
+.games-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.game-tile{
+  position:relative; border-radius:18px; overflow:hidden; aspect-ratio:1/1; border:1px solid var(--line);
+  display:flex; align-items:flex-end; box-shadow:var(--shadow); cursor:pointer;
+}
+.game-tile .gt-emoji{position:absolute; top:14px; right:14px; font-size:32px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.game-tile .gt-caption{
+  width:100%; padding:10px 10px 12px; background:linear-gradient(to top, rgba(0,0,0,.75), transparent);
+  color:#fff; font-size:12.5px; font-weight:800; text-align:center;
+}
+.arcade-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.arcade-lives{font-size:16px; letter-spacing:2px;}
+.arcade-progress-label{display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-dim); margin-bottom:6px;}
+.arcade-banner{
+  border-radius:18px; padding:22px 16px; text-align:center; color:#fff; margin-bottom:16px;
+  text-shadow:0 2px 8px rgba(0,0,0,.5);
+}
+.arcade-banner .ab-emoji{font-size:40px; display:block; margin-bottom:6px;}
+.arcade-banner .ab-title{font-family:var(--font-d); font-size:18px; font-weight:800;}
+.arcade-flavor{text-align:center; font-size:13px; color:var(--teal); font-weight:700; min-height:20px; margin-bottom:8px;}
+
+/* ---------- voice lesson (classroom style) ---------- */
+.lesson-controls{display:flex; gap:6px;}
+.mic-big-wrap{display:flex; justify-content:center; padding:8px 0 4px;}
+.mic-big-btn{
+  width:68px; height:68px; border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),#e0982b); color:#22160a; font-size:28px;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(242,184,75,.4);
+  transition:transform .15s;
+}
+.mic-big-btn:active{transform:scale(.95);}
+.mic-big-btn.active{
+  background:linear-gradient(135deg,var(--coral),#c94b4b); box-shadow:0 0 0 0 rgba(255,107,107,.5);
+  animation:mic-pulse-big 1.4s infinite;
+}
+@keyframes mic-pulse-big{
+  0%{box-shadow:0 0 0 0 rgba(255,107,107,.5);}
+  70%{box-shadow:0 0 0 18px rgba(255,107,107,0);}
+  100%{box-shadow:0 0 0 0 rgba(255,107,107,0);}
+}
+.lc-btn{width:34px; height:34px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px; display:flex; align-items:center; justify-content:center;}
+.lc-btn.active{background:var(--teal); color:#04211d; border-color:var(--teal);}
+.lc-btn.lc-end{background:var(--coral); color:#fff; border-color:var(--coral);}
+.lesson-avatars-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
+.avatar-box{position:relative; aspect-ratio:4/3; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:linear-gradient(160deg,#1e1b4b,#3730a3); display:flex; align-items:center; justify-content:center;}
+.avatar-box .avatar-label{position:absolute; bottom:0; right:0; left:0; padding:4px 8px; background:linear-gradient(to top, rgba(0,0,0,.7), transparent); color:#fff; font-size:11px; font-weight:700;}
+.webcam-box{background:#0b0e22;}
+.webcam-box video{width:100%; height:100%; object-fit:cover; transform:scaleX(-1);}
+.webcam-off-msg{color:var(--text-dim); font-size:11.5px; text-align:center; padding:0 10px;}
+.robot-face{display:flex; flex-direction:column; align-items:center;}
+.robot-head{width:64px; height:56px; background:linear-gradient(160deg,#e2e8f0,#94a3b8); border-radius:16px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,.3);}
+.robot-antenna{position:absolute; top:-10px; width:4px; height:10px; background:#94a3b8; border-radius:2px;}
+.robot-antenna::after{content:""; position:absolute; top:-6px; left:-2px; width:8px; height:8px; border-radius:50%; background:var(--coral);}
+.robot-eyes{display:flex; gap:10px; margin-bottom:4px;}
+.robot-eyes span{width:9px; height:9px; border-radius:50%; background:#0891b2;}
+.robot-mouth{width:22px; height:5px; background:#334155; border-radius:3px; transition:height .1s, border-radius .1s;}
+.robot-mouth.open{height:14px; border-radius:7px;}
+.lesson-board{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
+.lb-instructions{font-size:13px; font-weight:700; color:var(--gold); margin-bottom:12px; line-height:1.5;}
+.lb-content{margin-bottom:14px; min-height:80px;}
+.lb-diagram{background:#0b0e22; border:1px solid var(--line); border-radius:14px; margin-bottom:12px; overflow:hidden;}
+.lb-diagram svg{width:100%; height:auto; display:block;}
+.btn-submit-lesson{
+  width:100%; padding:13px; border-radius:12px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff;
+  font-weight:800; font-size:14.5px; border:none;
+}
+.btn-submit-lesson:disabled{opacity:.5;}
+.match-wrap{position:relative; display:flex; justify-content:space-between; gap:30px;}
+.match-lines{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
+.match-col{display:flex; flex-direction:column; gap:10px; flex:1; z-index:1;}
+.match-item{padding:10px 12px; border-radius:12px; background:var(--panel2); border:2px solid var(--line); font-size:14px; font-weight:700; text-align:center;}
+.match-item.sel{border-color:var(--gold);}
+.match-item.correct{border-color:var(--teal); background:rgba(45,212,191,.15);}
+.match-item.wrong{border-color:var(--coral); background:rgba(255,107,107,.15);}
+.fillblank-row{background:var(--panel2); border-radius:12px; padding:12px; margin-bottom:10px; font-size:14px; line-height:1.8;}
+.fillblank-input{width:100px; padding:4px 8px; border-radius:8px; border:2px solid var(--line); background:var(--panel); color:var(--text); text-align:center; font-size:13.5px; margin:0 4px;}
+.fillblank-input.correct-input{border-color:var(--teal);}
+.fillblank-input.wrong-input{border-color:var(--coral);}
+.opt-btn.sel{border-color:var(--gold); background:rgba(242,184,75,.15);}
+.order-built{min-height:36px; display:flex; flex-direction:column; gap:6px; margin-bottom:10px;}
+.order-pool{display:flex; flex-wrap:wrap; gap:8px;}
+.voice-transcript{max-height:130px; display:flex; flex-direction:column; gap:8px; padding:6px 2px; margin-bottom:10px; overflow-y:auto;}
+.voice-status{text-align:center; font-size:12px; color:var(--text-dim); font-weight:700; margin-bottom:6px; min-height:16px;}
+</style>
 </head>
 <body>
-    <div class="login-screen" id="loginScreen">
-        <div class="login-form">
-            <h2>משחק עוגיות</h2>
-            <input type="text" id="usernameInput" placeholder="שם משתמש" maxlength="20">
-            <input type="password" id="passwordInput" placeholder="סיסמה">
-            <div class="remember-me">
-                <input type="checkbox" id="rememberMe">
-                <label for="rememberMe">זכור אותי</label>
-            </div>
-            <button id="loginBtn">התחבר</button>
-            <button id="registerBtn">הרשם</button>
-            <div id="loginMessage"></div>
-        </div>
+<div id="toast"></div>
+<div class="app">
+
+<section class="screen active" id="screen-splash">
+  <div class="logo-orb"><span>🪐</span></div>
+  <h1>המורה החכם</h1>
+  <p class="tag">SmartLearn AI — מורה פרטי אישי, זמין 24 שעות ביממה</p>
+  <div class="auth-stack">
+    <button class="btn btn-gold btn-block" onclick="showScreen('login')">🔑 התחברות</button>
+    <button class="btn btn-teal btn-block" onclick="startRegister()">📝 הרשמה</button>
+  </div>
+</section>
+
+<section class="screen" id="screen-login">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>🔑 התחברות</h2><div style="width:38px"></div></div>
+  <div class="field"><label>שם משתמש</label><input id="login-username" placeholder="שם המשתמש שלך"></div>
+  <div class="field"><label>סיסמה</label><input id="login-password" type="password" placeholder="סיסמה" onkeydown="if(event.key==='Enter')doLogin()"></div>
+  <button class="btn btn-gold btn-block" onclick="doLogin()">התחבר/י</button>
+  <p style="text-align:center; font-size:12.5px; color:var(--text-dim); margin-top:16px;">אין לך חשבון? <a href="#" onclick="startRegister(); return false;" style="color:var(--teal); font-weight:700;">הרשם/י כאן</a></p>
+</section>
+
+<section class="screen" id="screen-onboard">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('splash')">→</button><h2>הרשמה</h2><div style="width:38px"></div></div>
+  <div class="step-dots"><span id="dot1" class="on"></span><span id="dot2"></span><span id="dot3"></span></div>
+
+  <div id="ob-step1">
+    <div class="field"><label>שם משתמש</label><input id="ob-name" placeholder="שם ייחודי להתחברות"></div>
+    <div class="field"><label>סיסמה</label><input id="ob-password" type="password" placeholder="בחר/י סיסמה"></div>
+    <div class="field"><label>גיל</label><input id="ob-age" type="number" placeholder="למשל 12"></div>
+    <div class="field"><label>כיתה</label>
+      <select id="ob-grade">
+        <option>גן חובה</option><option>א'</option><option>ב'</option><option>ג'</option><option>ד'</option><option>ה'</option><option>ו'</option>
+        <option>ז'</option><option>ח'</option><option>ט'</option><option selected>י'</option><option>י"א</option><option>י"ב</option>
+      </select>
     </div>
+    <div id="ob-error" style="color:var(--coral); font-size:12.5px; margin-bottom:10px; display:none;"></div>
+    <button class="btn btn-gold btn-block" onclick="obNext(2)">המשך</button>
+  </div>
 
-    <button class="settings-button" id="settingsBtn">הגדרות</button>
-
-    <div class="modal" id="settingsModal">
-        <div class="modal-content">
-            <h3>הגדרות</h3>
-            <button id="logoutBtn">התנתק</button>
-            <button class="close-button" id="closeSettingsBtn">סגור</button>
-            <div id="settingsMessage"></div>
-        </div>
+  <div id="ob-step2" class="hidden">
+    <div class="field"><label>שפה</label>
+      <select id="ob-lang"><option value="he">עברית</option><option value="en">English</option><option value="ar">العربية</option><option value="ru">Русский</option></select>
     </div>
-
-    <div class="game-container">
-        <div class="main-game">
-            <div class="stats">
-                <div class="cookie-count" id="cookieCount">0</div>
-                <div class="cookies-per-second" id="cpsDisplay">0 עוגיות לשנייה</div>
-            </div>
-            <div class="cookie-container">
-                <div class="cookie" id="cookie"></div>
-            </div>
-        </div>
-
-        <div class="shop">
-            <h2>חנות</h2>
-            <div class="shop-section">
-                <h3>מבנים</h3>
-                <div id="buildingItems"></div>
-            </div>
-        </div>
+    <div class="field"><label>מדינה</label>
+      <select id="ob-country"><option>ישראל</option><option>ארה"ב</option><option>קנדה</option><option>אחר</option></select>
     </div>
+    <div class="field"><label>תוכנית לימודים</label>
+      <select id="ob-curriculum"><option>תוכנית משרד החינוך</option><option>בגרויות מוגברות</option><option>לימוד עצמאי / העשרה</option></select>
+    </div>
+    <div class="field">
+      <label>קוד בקרת הורים (4 ספרות) — ליצירת לוח בקרה להורים</label>
+      <input id="ob-parentcode" inputmode="numeric" maxlength="4" placeholder="למשל 1234">
+    </div>
+    <button class="btn btn-gold btn-block" onclick="obNext(3)">המשך</button>
+  </div>
 
-    <script>
-        var firebaseConfig = {
-            apiKey: "AIzaSyBZKyN8w32w1pn4hf28Fv9LecsTDgjZRTs",
-            authDomain: "my-login-system-d583d.firebaseapp.com",
-            databaseURL: "https://my-login-system-d583d-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "my-login-system-d583d",
-            storageBucket: "my-login-system-d583d.firebasestorage.app",
-            messagingSenderId: "873530338056",
-            appId: "1:873530338056:web:1d2911d1cb9a0000271abd"
-        };
+  <div id="ob-step3" class="hidden">
+    <p style="text-align:center; color:var(--text-dim); font-size:13px; margin-bottom:12px;">בחר/י אווטאר אישי</p>
+    <div class="avatar-preview" id="ob-avatar-preview">🦊</div>
+    <div class="avatar-pick" id="ob-emoji-picker"></div>
+    <button class="btn btn-teal btn-block" style="margin-top:22px;" onclick="finishOnboarding()">בואו נתחיל ללמוד 🚀</button>
+  </div>
+</section>
 
-        var database;
-        var firebaseInit = false;
 
-        try {
-            firebase.initializeApp(firebaseConfig);
-            database = firebase.database();
-            firebaseInit = true;
-        } catch (err) {
-            console.log("Firebase error: " + err.message);
-        }
+<section class="screen" id="screen-home">
+  <div class="topbar">
+    <h2 style="font-size:22px;">🪐 המורה החכם</h2>
+    <button class="back-btn" onclick="showScreen('settings')">⚙️</button>
+  </div>
 
-        var cookies = 0;
-        var cookiesPerSecond = 0;
-        var clickPower = 1;
-        var currentUser = null;
-        var users = {};
+  <div class="home-header">
+    <div class="avatar-circle" id="home-avatar" style="background:#2a2f5c;"><span id="home-avatar-emoji">🦊</span></div>
+    <div class="greet">
+      <h2 id="home-greet">שלום!</h2>
+      <div class="stat-row">
+        <span class="stat-chip">🔥 <span id="home-streak">0</span> ימים</span>
+        <span class="stat-chip">🪙 <span id="home-coins">0</span></span>
+      </div>
+    </div>
+    <div class="ring-wrap">
+      <svg width="74" height="74"><circle cx="37" cy="37" r="30" stroke="var(--panel2)" stroke-width="7" fill="none"/><circle id="goal-ring" cx="37" cy="37" r="30" stroke="var(--teal)" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="188" stroke-dashoffset="188"/></svg>
+      <div class="ring-txt"><span id="goal-txt">0%</span><span style="color:var(--text-dim); font-weight:600;">יעד יומי</span></div>
+    </div>
+  </div>
 
-        var buildings = {
-            cursor: { name: "סמן", emoji: "👆", baseCost: 15, cps: 0.1, count: 0 },
-            grandma: { name: "סבתא", emoji: "👵", baseCost: 100, cps: 1, count: 0 },
-            farm: { name: "חווה", emoji: "🚜", baseCost: 1100, cps: 8, count: 0 },
-            mine: { name: "מכרה", emoji: "⛏", baseCost: 12000, cps: 47, count: 0 },
-            factory: { name: "מפעל", emoji: "🏭", baseCost: 130000, cps: 260, count: 0 }
-        };
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <b style="font-size:13px;">התקדמות שבועית (דקות למידה)</b>
+    </div>
+    <canvas class="chart-canvas" id="week-chart"></canvas>
+  </div>
 
-        function formatNum(num) {
-            if (num < 1000) return Math.floor(num).toString();
-            if (num < 1000000) return (num / 1000).toFixed(1) + "K";
-            if (num < 1000000000) return (num / 1000000).toFixed(1) + "M";
-            return (num / 1000000000).toFixed(1) + "B";
-        }
+  <div class="section-title">✅ משימות יומיות</div>
+  <div class="card" id="daily-missions"></div>
 
-        function updateDisplay() {
-            document.getElementById("cookieCount").textContent = formatNum(cookies);
-            document.getElementById("cpsDisplay").textContent = formatNum(cookiesPerSecond) + " עוגיות לשנייה";
-        }
+  <div class="big-actions">
+    <button onclick="showScreen('subjects')"><span class="ic2">📚</span>למידה</button>
+    <button onclick="openChat()"><span class="ic2">🤖</span>AI Chat</button>
+    <button onclick="showScreen('subjects')"><span class="ic2">✏️</span>תרגול</button>
+    <button onclick="showScreen('quiz-setup')"><span class="ic2">📝</span>מבחנים</button>
+    <button onclick="showScreen('games-hub')"><span class="ic2">🎮</span>משחקים</button>
+    <button onclick="showScreen('achievements')"><span class="ic2">🏆</span>פרסים</button>
+    <button onclick="showScreen('mistakes')"><span class="ic2">🔁</span>טעויות</button>
+    <button onclick="showScreen('shop')"><span class="ic2">🛍️</span>חנות</button>
+  </div>
 
-        function calcCPS() {
-            cookiesPerSecond = 0;
-            for (var key in buildings) {
-                cookiesPerSecond = cookiesPerSecond + (buildings[key].count * buildings[key].cps);
-            }
-        }
+  <div class="section-title">📰 טיפ לימודי היום</div>
+  <div class="card tip-card" id="daily-tip">טוען...</div>
 
-        function getCost(build) {
-            return Math.floor(build.baseCost * Math.pow(1.15, build.count));
-        }
+  <div class="section-title">🔮 טכנולוגיות עתידיות</div>
+  <div class="future-card"><span class="fic">🥽</span><div><b style="font-size:13px;">מעבדת VR</b><div style="font-size:11px; color:var(--text-dim);">שיעור בתוך מעבדה וירטואלית</div></div><span class="soon-pill">בקרוב</span></div>
+  <div class="future-card"><span class="fic">🪐</span><div><b style="font-size:13px;">טיול במערכת השמש (AR)</b><div style="font-size:11px; color:var(--text-dim);">מודלים תלת־ממדיים באוויר</div></div><span class="soon-pill">בקרוב</span></div>
 
-        function makeShop() {
-            var cont = document.getElementById("buildingItems");
-            cont.innerHTML = "";
+  <div class="section-title">💌 הודעות מההורים:</div>
+  <div class="card" id="parent-msg-card">אין עדיין הודעות מההורים</div>
+</section>
 
-            for (var key in buildings) {
-                var build = buildings[key];
-                var cost = getCost(build);
-                var afford = cookies >= cost;
+<section class="screen" id="screen-subjects">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>בחירת מקצוע</h2><div style="width:38px"></div></div>
+  <div class="search-box">🔍<input id="subject-search" placeholder="חיפוש מקצוע..." oninput="renderSubjects()"></div>
+  <div class="grid3" id="subjects-grid"></div>
+</section>
 
-                var itm = document.createElement("div");
-                itm.className = afford ? "shop-item" : "shop-item disabled";
+<section class="screen" id="screen-custom-topic">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('subjects')">→</button><h2>✨ מותאם אישית</h2><div style="width:38px"></div></div>
+  <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:14px;">בחר/י מקצוע, כתוב/כתבי כל נושא שתרצה/י (גם אם הוא לא ברשימה הרגילה), ובחר/י כיתה — ה-AI יתאים את עצמו בדיוק לזה.</p>
+  <div class="field"><label>מקצוע</label><select id="custom-subject"></select></div>
+  <div class="field"><label>נושא (כתוב/כתבי חופשי)</label><input id="custom-topic-input" placeholder="למשל: גיאומטריה, זמנים באנגלית, מלחמת העולם השנייה..."></div>
+  <div class="field"><label>כיתה</label>
+    <select id="custom-grade">
+      <option>גן חובה</option><option>א'</option><option>ב'</option><option>ג'</option><option>ד'</option><option>ה'</option><option>ו'</option>
+      <option>ז'</option><option>ח'</option><option>ט'</option><option selected>י'</option><option>י"א</option><option>י"ב</option>
+    </select>
+  </div>
+  <button class="btn btn-gold btn-block" onclick="confirmCustomTopic()">✅ אישור</button>
+</section>
 
-                var nameDiv = document.createElement("div");
-                nameDiv.className = "item-name";
-                nameDiv.textContent = build.emoji + " " + build.name + " (" + build.count + ")";
+<section class="screen" id="screen-topics">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('subjects')">→</button><h2 id="topics-title">נושאים</h2><div style="width:38px"></div></div>
+  <div class="diff-tabs" id="topics-list"></div>
+  <div class="section-title">🎯 מה תרצו לעשות?</div>
+  <div class="grid2">
+    <button class="btn btn-teal" onclick="startPractice()">✏️ תרגול חופשי</button>
+    <button class="btn btn-gold" onclick="openQuizSetupFromTopic()">📝 מבחן בנושא</button>
+    <button class="btn btn-ghost" onclick="openChat()">🤖 שאל את ה-AI</button>
+    <button class="btn btn-ghost" onclick="showToast('פותח מצלמה... (הדגמה) 📷')">📷 צלם ותרגל</button>
+  </div>
+  <button class="btn btn-block" style="margin-top:10px; background:linear-gradient(135deg,var(--violet),#6a5acd); color:#fff;" onclick="showScreen('voice-lesson-setup')">🎙️ שיעור עם AI</button>
+</section>
 
-                var descDiv = document.createElement("div");
-                descDiv.className = "item-description";
-                descDiv.textContent = "לשנייה: " + formatNum(build.cps);
+<section class="screen" id="screen-chat">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🤖 שיחה עם ה-AI</h2><div style="width:38px"></div></div>
+  <div class="quick-actions">
+    <button onclick="quickPrompt('תסביר כמו לילד בן 7')">🧒 כמו לילד בן 7</button>
+    <button onclick="quickPrompt('תסביר כמו לתלמיד תיכון')">🎒 כמו תיכוניסט</button>
+    <button onclick="quickPrompt('תסביר ברמת אוניברסיטה')">🎓 רמת אוניברסיטה</button>
+    <button onclick="quickPrompt('לא הבנתי, תסביר אחרת')">❓ לא הבנתי</button>
+    <button onclick="quickPrompt('תן דוגמא')">💡 תן דוגמא</button>
+  </div>
+  <div class="chat-log" id="chat-log"></div>
+  <div class="chat-footer">
+    <div class="reply-preview hidden" id="reply-preview">
+      <span class="rp-text" id="reply-preview-text"></span>
+      <button class="rp-close" onclick="cancelReply()">✕</button>
+    </div>
+    <div class="chat-input-bar">
+      <button onclick="sendChat()">↩</button>
+      <input id="chat-input" placeholder="שאל/י כל שאלה..." onkeydown="if(event.key==='Enter')sendChat()">
+    </div>
+  </div>
+</section>
 
-                var priceDiv = document.createElement("div");
-                priceDiv.className = "item-price";
-                priceDiv.textContent = "עוגיות: " + formatNum(cost);
+<section class="screen" id="screen-practice">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('topics')">→</button><h2>✏️ תרגול</h2>
+    <button class="back-btn" onclick="showToast('נשמר להמשך אח״כ ✅')">⏸</button>
+  </div>
+  <div id="practice-area"></div>
+</section>
 
-                itm.appendChild(nameDiv);
-                itm.appendChild(descDiv);
-                itm.appendChild(priceDiv);
+<section class="screen" id="screen-voice-lesson-setup">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('topics')">→</button><h2>🎙️ הגדרת שיעור</h2><div style="width:38px"></div></div>
+  <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:16px;" id="vls-context"></p>
+  <div class="field"><label>רמת קושי</label>
+    <select id="voice-lesson-diff"><option>קל</option><option selected>בינוני</option><option>קשה</option><option>רמת בגרות</option></select>
+  </div>
+  <div class="field"><label>כיתה</label>
+    <select id="voice-lesson-grade">
+      <option>גן חובה</option><option>א'</option><option>ב'</option><option>ג'</option><option>ד'</option><option>ה'</option><option>ו'</option>
+      <option>ז'</option><option>ח'</option><option>ט'</option><option selected>י'</option><option>י"א</option><option>י"ב</option>
+    </select>
+  </div>
+  <button class="btn btn-gold btn-block" onclick="startVoiceLessonWithSettings()">🚀 התחל שיעור</button>
+</section>
 
-                if (afford) {
-                    itm.addEventListener("click", (function(k) {
-                        return function(e) { buyBuild(k, e); };
-                    })(key));
-                }
+<section class="screen" id="screen-voice-lesson">
+  <div class="topbar">
+    <button class="back-btn" onclick="exitVoiceLesson()">→</button>
+    <h2 id="voice-lesson-title" style="font-size:14px;">🎙️ שיעור עם AI</h2>
+    <div class="lesson-controls">
+      <button class="lc-btn" id="lc-video-btn" onclick="toggleCamera()" title="מצלמה">📹</button>
+      <button class="lc-btn active" id="lc-sound-btn" onclick="toggleSound()" title="קול">🔊</button>
+      <button class="lc-btn lc-end" onclick="exitVoiceLesson()" title="סיום שיעור">📞</button>
+    </div>
+  </div>
 
-                cont.appendChild(itm);
-            }
-        }
+  <div class="lesson-avatars-row">
+    <div class="avatar-box">
+      <div class="robot-face">
+        <div class="robot-head">
+          <div class="robot-antenna" style="right:8px;"></div>
+          <div class="robot-eyes"><span></span><span></span></div>
+          <div class="robot-mouth" id="robot-mouth"></div>
+        </div>
+      </div>
+      <div class="avatar-label">🤖 מורה AI</div>
+    </div>
+    <div class="avatar-box webcam-box">
+      <video id="user-webcam" autoplay playsinline muted></video>
+      <div class="webcam-off-msg" id="webcam-off-msg">📷 מצלמה כבויה</div>
+      <div class="avatar-label" id="webcam-label">את/ה</div>
+    </div>
+  </div>
 
-        function buyBuild(key, e) {
-            var build = buildings[key];
-            var cost = getCost(build);
+  <div class="lesson-board">
+    <div class="lb-instructions" id="lb-instructions">טוען שיעור...</div>
+    <div class="lb-diagram hidden" id="lb-diagram"></div>
+    <div class="lb-content" id="lb-content"></div>
+    <button class="btn-submit-lesson" id="lb-submit-btn" onclick="submitActivity()" disabled>✅ הגשה</button>
+  </div>
 
-            if (cookies >= cost) {
-                cookies = cookies - cost;
-                build.count = build.count + 1;
-                calcCPS();
-                updateDisplay();
-                makeShop();
-                if (e) showClick(e.clientX, e.clientY);
-            }
-        }
+  <div class="voice-status" id="voice-status">לחץ/י על המיקרופון ותוכל/י לדבר</div>
+  <div class="voice-transcript" id="voice-transcript"></div>
+  <div class="mic-big-wrap">
+    <button class="mic-big-btn active" id="lc-mic-btn" onclick="toggleListening()" title="מיקרופון">🎙️</button>
+  </div>
+</section>
 
-        function showClick(x, y) {
-            var eff = document.createElement("div");
-            eff.className = "click-effect";
-            eff.textContent = "+" + formatNum(clickPower);
-            eff.style.left = (x - 25) + "px";
-            eff.style.top = (y - 25) + "px";
-            document.body.appendChild(eff);
+<section class="screen" id="screen-quiz-setup">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>📝 בניית מבחן</h2><div style="width:38px"></div></div>
+  <div class="field"><label>מקצוע</label><select id="quiz-subject"></select></div>
+  <div class="field"><label>רמת קושי</label>
+    <select id="quiz-diff"><option>קל</option><option selected>בינוני</option><option>קשה</option><option>רמת בגרות</option></select>
+  </div>
+  <div class="field"><label>מספר שאלות</label>
+    <select id="quiz-count"><option>3</option><option selected>5</option><option>8</option></select>
+  </div>
+  <div class="field"><label>זמן לשאלה (שניות)</label>
+    <select id="quiz-time"><option value="0">ללא הגבלה</option><option value="30" selected>30</option><option value="60">60</option></select>
+  </div>
+  <button class="btn btn-gold btn-block" onclick="startQuiz()">🚀 התחל מבחן</button>
+</section>
 
-            setTimeout(function() {
-                if (document.body.contains(eff)) {
-                    document.body.removeChild(eff);
-                }
-            }, 1200);
-        }
+<section class="screen" id="screen-quiz">
+  <div class="topbar"><button class="back-btn" onclick="confirmExitQuiz()">→</button><h2 id="quiz-progress-txt">שאלה 1</h2><span class="timer-badge" id="quiz-timer">--</span></div>
+  <div class="progress-outer" style="margin-bottom:14px;"><div class="progress-inner" id="quiz-progress-bar" style="width:0%"></div></div>
+  <div id="quiz-area"></div>
+</section>
 
-        function doLogin() {
-            var user = document.getElementById("usernameInput").value.trim();
-            var pass = document.getElementById("passwordInput").value;
-            var msg = document.getElementById("loginMessage");
+<section class="screen" id="screen-quiz-results">
+  <div class="topbar"><h2>תוצאות המבחן</h2></div>
+  <div class="result-hero">
+    <div class="score" id="qr-score">0%</div>
+    <p id="qr-sub">סיכום התוצאות שלך</p>
+  </div>
+  <div class="grid2" style="margin-bottom:16px;">
+    <div class="card" style="text-align:center;"><b id="qr-correct">0</b><div style="font-size:11px; color:var(--text-dim);">תשובות נכונות</div></div>
+    <div class="card" style="text-align:center;"><b id="qr-coins">0</b><div style="font-size:11px; color:var(--text-dim);">מטבעות שהתקבלו</div></div>
+  </div>
+  <div class="section-title">📋 סקירת שאלות</div>
+  <div id="qr-review"></div>
+  <button class="btn btn-teal btn-block" style="margin-top:14px;" onclick="showScreen('home')">חזרה למסך הבית</button>
+</section>
 
-            if (!user || !pass) {
-                msg.textContent = "הזן שם וסיסמה";
-                msg.className = "error-message";
-                return;
-            }
+<section class="screen" id="screen-mistakes">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🔁 חזרה על טעויות</h2><div style="width:38px"></div></div>
+  <div id="mistakes-list"></div>
+</section>
 
-            function finishLogin(data) {
-                currentUser = user;
-                users[user] = data;
-                cookies = data.cookies || 0;
+<section class="screen" id="screen-achievements">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🏆 הישגים</h2><div style="width:38px"></div></div>
+  <div id="achievements-list"></div>
+</section>
 
-                for (var key in buildings) {
-                    if (data.buildings && data.buildings[key]) {
-                        buildings[key].count = data.buildings[key].count || 0;
-                    }
-                }
+<section class="screen" id="screen-avatar">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>🦊 עריכת אווטאר</h2><div style="width:38px"></div></div>
+  <div class="avatar-preview" id="av-preview">🦊</div>
+  <div class="section-title">בחר/י דמות</div>
+  <div class="avatar-pick" id="av-emoji-picker"></div>
+  <div class="section-title">צבע רקע</div>
+  <div class="color-row" id="av-color-picker"></div>
+  <button class="btn btn-gold btn-block" onclick="saveAvatar()">💾 שמור</button>
+</section>
 
-                calcCPS();
-                updateDisplay();
-                makeShop();
-                document.getElementById("loginScreen").style.display = "none";
-            }
+<section class="screen" id="screen-shop">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🛍️ חנות</h2><span class="pill">🪙 <span id="shop-coins">0</span></span></div>
+  <div id="shop-list"></div>
+</section>
 
-            if (firebaseInit) {
-                database.ref("users/" + user).once("value").then(function(snap) {
-                    if (snap.exists() && snap.val().password === pass) {
-                        finishLogin(snap.val());
-                    } else if (users[user] && users[user].password === pass) {
-                        finishLogin(users[user]);
-                    } else {
-                        msg.textContent = "שם או סיסמה שגויים";
-                        msg.className = "error-message";
-                    }
-                }).catch(function(err) {
-                    msg.textContent = "שגיאת התחברות: " + err.message;
-                    msg.className = "error-message";
-                });
-            } else {
-                if (users[user] && users[user].password === pass) {
-                    finishLogin(users[user]);
-                } else {
-                    msg.textContent = "שם או סיסמה שגויים";
-                    msg.className = "error-message";
-                }
-            }
-        }
+<section class="screen" id="screen-games-hub">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>🎮 משחקים</h2><div style="width:38px"></div></div>
+  <div class="games-grid" id="games-grid"></div>
+</section>
 
-        function doRegister() {
-            var user = document.getElementById("usernameInput").value.trim();
-            var pass = document.getElementById("passwordInput").value;
-            var msg = document.getElementById("loginMessage");
+<section class="screen" id="screen-arcade-game">
+  <div class="topbar"><button class="back-btn" onclick="exitArcadeGame()">→</button><h2 id="arcade-title">משחק</h2><div style="width:38px"></div></div>
+  <div class="arcade-banner" id="arcade-banner">
+    <span class="ab-emoji" id="arcade-emoji">🎮</span>
+    <span class="ab-title" id="arcade-name"></span>
+  </div>
+  <div class="arcade-header">
+    <span class="arcade-lives" id="arcade-lives"></span>
+    <span class="pill" id="arcade-score-pill">0 מטבעות</span>
+  </div>
+  <div class="arcade-progress-label"><span id="arcade-progress-txt">0/8</span><span id="arcade-unit-label"></span></div>
+  <div class="progress-outer" style="margin-bottom:10px;"><div class="progress-inner" id="arcade-progress-bar" style="width:0%"></div></div>
+  <div class="arcade-flavor" id="arcade-flavor"></div>
+  <div id="arcade-question-area"></div>
+</section>
 
-            if (!user || !pass) {
-                msg.textContent = "הזן שם וסיסמה";
-                msg.className = "error-message";
-                return;
-            }
+<section class="screen" id="screen-settings">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('home')">→</button><h2>⚙️ הגדרות</h2><div style="width:38px"></div></div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="stat-block"><span>מצב כהה</span><button class="toggle on" id="dark-toggle" onclick="toggleDark()"></button></div>
+    <div class="stat-block"><span>שפה</span>
+      <select id="settings-lang" onchange="changeLang(this.value)" style="background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 10px;">
+        <option value="he">עברית</option><option value="en">English</option>
+      </select>
+    </div>
+    <div class="stat-block"><span>יעד יומי (דקות)</span>
+      <select id="settings-goal" onchange="setDailyGoal(this.value)" style="background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 10px;">
+        <option value="10">10</option><option value="20">20</option><option value="30" selected>30</option><option value="60">60</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('edit-profile')">✏️ עריכת פרטים אישיים</button>
+  <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('avatar')">🦊 עריכת אווטאר</button>
+  <button class="btn btn-block" style="margin-bottom:10px;" onclick="showScreen('statistics')">📊 סטטיסטיקות מלאות</button>
+  <button class="btn btn-block" style="margin-bottom:10px;" onclick="requestParentAccess()">👨‍👩‍👧 לוח בקרה להורים</button>
+  <button class="btn btn-ghost btn-block" onclick="logout()">🚪 התנתקות</button>
+</section>
 
-            if (user.length < 3) {
-                msg.textContent = "שם קצר מדי";
-                msg.className = "error-message";
-                return;
-            }
+<section class="screen" id="screen-edit-profile">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>✏️ עריכת פרטים אישיים</h2><div style="width:38px"></div></div>
+  <div class="field"><label>שם פרטי</label><input id="ep-name" placeholder="שם"></div>
+  <div class="field"><label>סיסמה חדשה (השאר ריק אם לא רוצים לשנות)</label><input id="ep-password" type="password" placeholder="סיסמה חדשה"></div>
+  <div class="field"><label>גיל</label><input id="ep-age" type="number" placeholder="גיל"></div>
+  <div class="field"><label>כיתה</label>
+    <select id="ep-grade">
+      <option>גן חובה</option><option>א'</option><option>ב'</option><option>ג'</option><option>ד'</option><option>ה'</option><option>ו'</option>
+      <option>ז'</option><option>ח'</option><option>ט'</option><option>י'</option><option>י"א</option><option>י"ב</option>
+    </select>
+  </div>
+  <div class="field"><label>שפה</label>
+    <select id="ep-lang"><option value="he">עברית</option><option value="en">English</option><option value="ar">العربية</option><option value="ru">Русский</option></select>
+  </div>
+  <div class="field"><label>מדינה</label>
+    <select id="ep-country"><option>ישראל</option><option>ארה"ב</option><option>קנדה</option><option>אחר</option></select>
+  </div>
+  <div class="field"><label>תוכנית לימודים</label>
+    <select id="ep-curriculum"><option>תוכנית משרד החינוך</option><option>בגרויות מוגברות</option><option>לימוד עצמאי / העשרה</option></select>
+  </div>
+  <div class="field"><label>קוד בקרת הורים חדש (4 ספרות, השאר ריק אם לא רוצים לשנות)</label>
+    <input id="ep-parentcode" inputmode="numeric" maxlength="4" placeholder="קוד חדש">
+  </div>
+  <button class="btn btn-gold btn-block" onclick="saveProfileEdits()">💾 שמור שינויים</button>
+</section>
 
-            function finishRegister() {
-                var newUser = {
-                    password: pass,
-                    cookies: 0,
-                    buildings: JSON.parse(JSON.stringify(buildings))
-                };
+<section class="screen" id="screen-statistics">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>📊 סטטיסטיקות</h2><div style="width:38px"></div></div>
+  <div class="card" style="margin-bottom:14px;"><b style="font-size:13px;">זמן למידה - 7 ימים אחרונים</b><canvas class="chart-canvas" id="stats-week-chart"></canvas></div>
+  <div class="section-title">💪 נושאים חזקים וחלשים</div>
+  <div id="stats-subjects"></div>
+  <div class="section-title">🔮 תחזית ציונים (הערכה)</div>
+  <div class="card" id="stats-forecast"></div>
+</section>
 
-                users[user] = newUser;
-                currentUser = user;
+<section class="screen" id="screen-parent-dash">
+  <div class="topbar"><button class="back-btn" onclick="showScreen('settings')">→</button><h2>👨‍👩‍👧 לוח בקרה להורים</h2><div style="width:38px"></div></div>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="stat-block"><span>זמן למידה היום</span><b id="pd-today">0 דק'</b></div>
+    <div class="stat-block"><span>רצף ימים</span><b id="pd-streak">0</b></div>
+    <div class="stat-block"><span>מטבעות שנצברו</span><b id="pd-coins">0</b></div>
+    <div class="stat-block"><span>ציון ממוצע בתרגולים</span><b id="pd-avg">0%</b></div>
+  </div>
+  <div class="section-title">📉 נושאים חלשים לחיזוק</div>
+  <div class="card" id="pd-weak"></div>
+  <div class="section-title">🎛️ בקרת הורים</div>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="stat-block"><span>יעד למידה יומי (דקות)</span>
+      <select id="pd-goal" onchange="setDailyGoal(this.value)" style="background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 10px;">
+        <option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="60">60</option>
+      </select>
+    </div>
+    <div class="stat-block"><span>חסימת משחקים</span><button class="toggle" id="pd-block-toggle" onclick="toggleBlockGames()"></button></div>
+  </div>
+  <div class="section-title">✉️ שליחת הודעה לתלמיד/ה</div>
+  <div class="card">
+    <input id="pd-msg" placeholder="כתוב הודעה מעודדת..." style="width:100%; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--text); margin-bottom:10px;">
+    <button class="btn btn-teal btn-block" onclick="sendParentMessage()">שלח הודעה</button>
+  </div>
+</section>
 
-                if (firebaseInit) {
-                    database.ref("users/" + user).set(newUser).catch(function(err) {
-                        console.log("Save error: " + err.message);
-                    });
-                }
+</div>
 
-                cookies = 0;
-                calcCPS();
-                updateDisplay();
-                makeShop();
-                msg.textContent = "הרשמה הצליחה";
-                msg.className = "success-message";
-                setTimeout(function() {
-                    document.getElementById("loginScreen").style.display = "none";
-                }, 1000);
-            }
+<div class="wb-modal hidden" id="wb-modal">
+  <div class="wb-panel">
+    <div class="wb-header"><b>📝 לוח כתיבה</b><button class="wb-close-btn" onclick="closeWhiteboard()">✕</button></div>
+    <div class="wb-canvas-wrap"><canvas id="wb-canvas"></canvas></div>
+    <div class="wb-response" id="wb-response"></div>
+    <div class="wb-toolbar">
+      <button class="btn btn-ghost" onclick="clearWhiteboard()">🗑️ נקה</button>
+      <button class="btn btn-gold" id="wb-send-btn" onclick="sendWhiteboardToAI()">🤖 שלח ל-AI</button>
+    </div>
+  </div>
+</div>
 
-            if (firebaseInit) {
-                database.ref("users/" + user).once("value").then(function(snap) {
-                    if (snap.exists() || users[user]) {
-                        msg.textContent = "שם קיים כבר";
-                        msg.className = "error-message";
-                    } else {
-                        finishRegister();
-                    }
-                }).catch(function(err) {
-                    msg.textContent = "שגיאת הרשמה: " + err.message;
-                    msg.className = "error-message";
-                });
-            } else {
-                if (users[user]) {
-                    msg.textContent = "שם קיים כבר";
-                    msg.className = "error-message";
-                } else {
-                    finishRegister();
-                }
-            }
-        }
 
-        function openSettings() {
-            if (!currentUser) {
-                alert("התחבר קודם");
-                return;
-            }
-            document.getElementById("settingsModal").style.display = "flex";
-        }
+<div class="bottomnav" id="bottomnav">
+  <button class="navbtn active" data-nav="home" onclick="showScreen('home')"><span class="ic">🏠</span>בית</button>
+  <button class="navbtn" data-nav="subjects" onclick="showScreen('subjects')"><span class="ic">📚</span>למידה</button>
+  <button class="navbtn" data-nav="chat" onclick="openChat()"><span class="ic">🤖</span>AI</button>
+  <button class="navbtn" data-nav="achievements" onclick="showScreen('achievements')"><span class="ic">🏆</span>הישגים</button>
+  <button class="navbtn" data-nav="settings" onclick="showScreen('settings')"><span class="ic">⚙️</span>הגדרות</button>
+</div>
 
-        function closeSettingsModal() {
-            document.getElementById("settingsModal").style.display = "none";
-        }
+<script>
+const SUBJECTS = [
+  {id:'math', name:'מתמטיקה', ic:'🔢'}, {id:'english', name:'אנגלית', ic:'🔤'},
+  {id:'hebrew', name:'עברית', ic:'📖'}, {id:'science', name:'מדעים', ic:'🔬'},
+  {id:'biology', name:'ביולוגיה', ic:'🧬'}, {id:'chemistry', name:'כימיה', ic:'⚗️'},
+  {id:'physics', name:'פיזיקה', ic:'🪐'}, {id:'history', name:'היסטוריה', ic:'🏛️'},
+  {id:'civics', name:'אזרחות', ic:'⚖️'}, {id:'literature', name:'ספרות', ic:'📚'},
+  {id:'grammar', name:'לשון', ic:'✍️'}, {id:'geography', name:'גאוגרפיה', ic:'🌍'},
+  {id:'cs', name:'מדעי המחשב', ic:'💻'}, {id:'coding', name:'תכנות', ic:'👨‍💻'},
+  {id:'robotics', name:'רובוטיקה', ic:'🤖'}, {id:'ai', name:'בינה מלאכותית', ic:'🧠'},
+  {id:'electronics', name:'אלקטרוניקה', ic:'🔌'}, {id:'astronomy', name:'אסטרונומיה', ic:'🔭'},
+  {id:'music', name:'מוזיקה', ic:'🎵'}, {id:'art', name:'אמנות', ic:'🎨'},
+  {id:'economics', name:'כלכלה', ic:'📈'}, {id:'accounting', name:'חשבונאות', ic:'🧾'},
+  {id:'psychology', name:'פסיכולוגיה', ic:'🧩'}, {id:'philosophy', name:'פילוסופיה', ic:'🦉'},
+  {id:'finance', name:'חינוך פיננסי', ic:'💰'}, {id:'entrepreneurship', name:'יזמות', ic:'🚀'},
+  {id:'cyber', name:'סייבר', ic:'🛡️'}, {id:'design', name:'עיצוב', ic:'🖌️'},
+  {id:'video', name:'עריכת וידאו', ic:'🎬'}, {id:'photoshop', name:'פוטושופ', ic:'🖼️'},
+  {id:'blender', name:'בלנדר', ic:'🧊'}, {id:'unity', name:'Unity', ic:'🎮'},
+  {id:'unreal', name:'Unreal Engine', ic:'🕹️'}, {id:'roblox', name:'Roblox Studio', ic:'🟪'},
+];
+const TOPICS_BY_SUBJECT = {
+  math:['שברים','משוואות','גיאומטריה','טריגונומטריה','פונקציות','סטטיסטיקה'],
+  english:['Grammar','Vocabulary','Reading','Writing','Tenses'],
+  hebrew:['הבנת הנקרא','ניתוח שירה','כתיבה יצירתית'],
+  science:['תאים','אנרגיה','מערכת השמש','אקולוגיה'],
+  default:['יסודות','נושא מתקדם','חזרה כללית']
+};
+function topicsFor(subjId){ return TOPICS_BY_SUBJECT[subjId] || TOPICS_BY_SUBJECT.default; }
 
-        function doLogout() {
-            if (confirm("בטוח שברצונך להתנתק?")) {
-                currentUser = null;
-                cookies = 0;
-                for (var key in buildings) {
-                    buildings[key].count = 0;
-                }
-                calcCPS();
-                updateDisplay();
-                document.getElementById("loginScreen").style.display = "flex";
-                document.getElementById("settingsModal").style.display = "none";
-                document.getElementById("usernameInput").value = "";
-                document.getElementById("passwordInput").value = "";
-            }
-        }
+const AVATAR_EMOJIS = ['🦊','🐼','🐧','🦁','🐱','🐰','🐸','🦄','🐯','🐨','🦉','🐙'];
+const AVATAR_COLORS = ['#2a2f5c','#5c2a4a','#2a5c4f','#5c4a2a','#3a2a5c','#5c2a2a'];
+const GAMES = [
+  {id:'race', name:'מרוץ הידע', emoji:'🏎️', grad:'linear-gradient(160deg,#ff6b35,#f2b84b)', unit:'מהירות', win:8, correctFlavor:'המכונית מאיצה קדימה! 🏁', wrongFlavor:'איטיים לרגע... אל תוותרו!'},
+  {id:'island', name:'אי המטמון החכם', emoji:'🏝️', grad:'linear-gradient(160deg,#0d9488,#2dd4bf)', unit:'תחנות', win:8, correctFlavor:'מתקדמים לתחנה הבאה במפה! 🗺️', wrongFlavor:'תחנה חסומה... נסו/י שוב'},
+  {id:'pyramid', name:'בריחה מהפירמידה', emoji:'🔺', grad:'linear-gradient(160deg,#b8860b,#f2b84b)', unit:'דלתות', win:8, correctFlavor:'דלת נפתחת! 🚪', wrongFlavor:'הדלת נשארה נעולה...'},
+  {id:'space', name:'מלחמת החלל', emoji:'🚀', grad:'linear-gradient(160deg,#1e1b4b,#6d28d9)', unit:'אויבים', win:8, correctFlavor:'ספינת אויב הושמדה! 💥', wrongFlavor:'פגיעה בספינה שלכם!'},
+  {id:'wizard', name:'ממלכת הקוסמים', emoji:'🧙', grad:'linear-gradient(160deg,#4c1d95,#8b7cf6)', unit:'לחשים', win:8, correctFlavor:'הלחש הצליח! ✨', wrongFlavor:'הלחש התפוגג...'},
+  {id:'zoo', name:'גן החיות החכם', emoji:'🦁', grad:'linear-gradient(160deg,#14532d,#22c55e)', unit:'חיות', win:8, correctFlavor:'חיה ניצלה! 🐾', wrongFlavor:'החיה עדיין מחכה לעזרה...'},
+  {id:'dragon', name:'צייד הדרקונים', emoji:'🐉', grad:'linear-gradient(160deg,#7c2d12,#f97316)', unit:'פריטים', win:8, correctFlavor:'אספתם פריט נדיר! ⚔️', wrongFlavor:'הפריט נעלם...'},
+  {id:'maze', name:'המבוך האינסופי', emoji:'🌀', grad:'linear-gradient(160deg,#134e4a,#0891b2)', unit:'צעדים', win:8, correctFlavor:'מוצאים את הדרך הלאה! 🧭', wrongFlavor:'מבוי סתום...'},
+  {id:'city', name:'בוני הערים', emoji:'🏙️', grad:'linear-gradient(160deg,#1e3a5f,#64748b)', unit:'משאבים', win:8, correctFlavor:'משאב חדש לבנייה! 🧱', wrongFlavor:'המשאב אזל הפעם...'},
+  {id:'timerace', name:'מרוץ נגד הזמן', emoji:'⏱️', grad:'linear-gradient(160deg,#991b1b,#f2b84b)', unit:'ניקוד', win:8, correctFlavor:'מטפסים בטבלה! 📈', wrongFlavor:'הזמן רץ...'},
+  {id:'pizza', name:'מלך הפיצה', emoji:'🍕', grad:'linear-gradient(160deg,#b91c1c,#facc15)', unit:'הזמנות', win:8, correctFlavor:'הזמנה הושלמה! 🍕', wrongFlavor:'ההזמנה יצאה לא נכון...'},
+  {id:'zombie', name:'כוכב הזומבים', emoji:'🧟', grad:'linear-gradient(160deg,#1a2e1a,#4b5563)', unit:'גלים', win:6, correctFlavor:'גל זומבים נעצר! 🛡️', wrongFlavor:'זומבי פרץ פנימה!'},
+  {id:'escape', name:'חדר הבריחה הסודי', emoji:'🔐', grad:'linear-gradient(160deg,#312e81,#7c3aed)', unit:'מנעולים', win:8, correctFlavor:'מנעול נפתח! 🔓', wrongFlavor:'הצופן שגוי...'},
+  {id:'mars', name:'מסע למאדים', emoji:'🚀', grad:'linear-gradient(160deg,#7f1d1d,#f97316)', unit:'משימות', win:8, correctFlavor:'משימה הושלמה במושבה! 🪐', wrongFlavor:'המשימה נכשלה, ננסה שוב...'},
+];
+const SHOP_ITEMS = [
+  {id:'frame_gold', name:'מסגרת זהב', ic:'🟡', price:50},
+  {id:'frame_fire', name:'מסגרת אש', ic:'🔥', price:80},
+  {id:'bg_space', name:'רקע חלל', ic:'🌌', price:60},
+  {id:'pet_dragon', name:'חיית מחמד: דרקון', ic:'🐉', price:120},
+  {id:'hat_wizard', name:'כובע קוסם', ic:'🧙', price:40},
+  {id:'glasses', name:'משקפי חנון', ic:'🤓', price:30},
+];
+const BADGES = [
+  {id:'first_lesson', name:'הצעד הראשון', desc:'סיימת שיעור ראשון', cond:s=>s.stats.totalPractices>=1, ic:'🥇'},
+  {id:'streak3', name:'רצף של 3', desc:'3 ימי למידה ברצף', cond:s=>s.streak>=3, ic:'🔥'},
+  {id:'streak7', name:'שבוע שלם', desc:'7 ימי למידה ברצף', cond:s=>s.streak>=7, ic:'🏅'},
+  {id:'coins50', name:'חוסך מתחיל', desc:'צברת 50 מטבעות', cond:s=>s.coinsEarnedTotal>=50, ic:'⭐'},
+  {id:'coins500', name:'מאסטר למידה', desc:'צברת 500 מטבעות', cond:s=>s.coinsEarnedTotal>=500, ic:'🌟'},
+  {id:'quiz5', name:'עבר את המבחן', desc:'סיימת 5 מבחנים', cond:s=>s.stats.quizzesTaken>=5, ic:'📝'},
+  {id:'perfect', name:'ציון מושלם', desc:'100% במבחן', cond:s=>s.stats.hadPerfectQuiz, ic:'💯'},
+  {id:'coins200', name:'עשיר קטן', desc:'צברת 200 מטבעות', cond:s=>s.coinsEarnedTotal>=200, ic:'💰'},
+];
+const DAILY_TIPS = [
+  'הפסקה של 5 דקות כל 25 דקות למידה משפרת ריכוז (שיטת פומודורו).',
+  'חזרה על חומר אחרי יום, שבוע וחודש מעבירה אותו לזיכרון לטווח ארוך.',
+  'הסבר את מה שלמדת בקול רם למישהו אחר — זו הדרך הכי טובה לוודא שהבנת.',
+  'שינה טובה לפני מבחן חשובה יותר מלמידה עד השעות הקטנות.',
+  'נסה/י לפתור תרגיל לפני שמסתכלים על הפתרון — זה מחזק את הזיכרון.',
+];
 
-        // Wire up all buttons with addEventListener (safer than inline onclick)
-        document.getElementById("loginBtn").addEventListener("click", doLogin);
-        document.getElementById("registerBtn").addEventListener("click", doRegister);
-        document.getElementById("settingsBtn").addEventListener("click", openSettings);
-        document.getElementById("closeSettingsBtn").addEventListener("click", closeSettingsModal);
-        document.getElementById("logoutBtn").addEventListener("click", doLogout);
+let accounts = {};
+let session = {mode:null, username:null};
+let state = null;
 
-        document.getElementById("cookie").addEventListener("click", function(e) {
-            cookies = cookies + clickPower;
-            updateDisplay();
-            showClick(e.clientX, e.clientY);
+function defaultState(){
+  return {
+    profile:{name:'', password:'', parentCode:'', age:'', grade:'', lang:'he', country:'', curriculum:'', avatar:'🦊', avatarColor:'#2a2f5c'},
+    coins:20, streak:0, lastActiveDate:null,
+    dailyGoal:30, todayMinutes:0, todayDate:null,
+    blockGames:false,
+    owned:[], parentMessages:[],
+    mistakes:[],
+    achievementsUnlocked:[],
+    coinsEarnedTotal:0,
+    stats:{ totalPractices:0, quizzesTaken:0, hadPerfectQuiz:false,
+      subjectProgress:{},
+      dailyMinutes:{}
+    },
+    dailyMissions:null, dailyMissionsDate:null,
+    darkMode:true
+  };
+}
+function loadAccounts(){
+  try{ accounts = JSON.parse(localStorage.getItem('aiTeacherAccounts')||'{}'); }catch(e){ accounts = {}; }
+  if(typeof accounts !== 'object' || accounts===null) accounts = {};
+}
+function loadSession(){
+  try{ session = JSON.parse(localStorage.getItem('aiTeacherSession')||'null') || {mode:null}; }catch(e){ session = {mode:null}; }
+}
+function migrateAccount(acc){
+  const d = defaultState();
+  Object.keys(d).forEach(k=>{ if(acc[k]===undefined || acc[k]===null) acc[k] = d[k]; });
+  if(!Array.isArray(acc.parentMessages)) acc.parentMessages = [];
+  if(!Array.isArray(acc.mistakes)) acc.mistakes = [];
+  if(!Array.isArray(acc.owned)) acc.owned = [];
+  if(!Array.isArray(acc.achievementsUnlocked)) acc.achievementsUnlocked = [];
+  if(!acc.profile) acc.profile = d.profile;
+  else Object.keys(d.profile).forEach(k=>{ if(acc.profile[k]===undefined) acc.profile[k] = d.profile[k]; });
+  if(!acc.stats) acc.stats = d.stats;
+  if(!acc.stats.subjectProgress) acc.stats.subjectProgress = {};
+  if(!acc.stats.dailyMinutes) acc.stats.dailyMinutes = {};
+  return acc;
+}
+function saveState(){
+  localStorage.setItem('aiTeacherAccounts', JSON.stringify(accounts));
+  localStorage.setItem('aiTeacherSession', JSON.stringify(session));
+}
+function usernameTaken(name){
+  return Object.keys(accounts).some(u=>u.toLowerCase()===name.toLowerCase());
+}
+function setActiveStudent(username){
+  session.mode = 'student';
+  session.username = username;
+  state = accounts[username];
+}
 
-            if (firebaseInit && currentUser) {
-                database.ref("users/" + currentUser + "/cookies").set(cookies);
-            }
-        });
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById('screen-'+name);
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.nav===name));
+  const preAuthScreens = ['splash','login','onboard'];
+  document.getElementById('bottomnav').classList.toggle('hidden', preAuthScreens.includes(name));
+  window.scrollTo(0,0);
+  if(name==='home') renderHome();
+  if(name==='subjects') renderSubjects();
+  if(name==='custom-topic') renderCustomTopicScreen();
+  if(name==='voice-lesson-setup') renderVoiceLessonSetup();
+  if(name==='achievements') renderAchievements();
+  if(name==='avatar') renderAvatarScreen();
+  if(name==='shop') renderShop();
+  if(name==='games-hub') renderGamesHub();
+  if(name==='mistakes') renderMistakes();
+  if(name==='statistics') renderStatistics();
+  if(name==='parent-dash') renderParentDash();
+  if(name==='quiz-setup') renderQuizSetup();
+  if(name==='edit-profile') renderEditProfile();
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
 
-        setInterval(function() {
-            cookies = cookies + (cookiesPerSecond / 10);
-            updateDisplay();
+function doLogin(){
+  const uInput = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value.trim();
+  if(!uInput){ showToast('הזן/י שם משתמש'); return; }
+  const realUsername = Object.keys(accounts).find(u => u.toLowerCase() === uInput.toLowerCase());
+  const acc = realUsername ? accounts[realUsername] : null;
+  if(!acc){ showToast('שם משתמש לא נמצא'); return; }
+  if((acc.profile.password||'') !== p){ showToast('סיסמה שגויה 😕'); return; }
+  setActiveStudent(realUsername);
+  saveState();
+  showScreen('home');
+}
+function startRegister(){
+  showScreen('onboard');
+  window._newProfile = {avatar:'🦊'};
+  const err = document.getElementById('ob-error'); if(err) err.style.display='none';
+  document.getElementById('ob-name').value='';
+  document.getElementById('ob-password').value='';
+  document.getElementById('ob-age').value='';
+  renderEmojiPicker('ob-emoji-picker','ob-avatar-preview');
+}
+function obNext(step){
+  if(step===2){
+    const name = document.getElementById('ob-name').value.trim();
+    const err = document.getElementById('ob-error');
+    if(!name){ err.textContent='חובה לבחור שם משתמש'; err.style.display='block'; return; }
+    if(usernameTaken(name)){ err.textContent='שם המשתמש הזה כבר תפוס, נסה/י שם אחר'; err.style.display='block'; return; }
+    err.style.display='none';
+    window._newProfile = window._newProfile || {};
+    window._newProfile.name = name;
+    window._newProfile.password = document.getElementById('ob-password').value.trim() || '';
+    window._newProfile.age = document.getElementById('ob-age').value;
+    window._newProfile.grade = document.getElementById('ob-grade').value;
+  }
+  if(step===3){
+    window._newProfile.lang = document.getElementById('ob-lang').value;
+    window._newProfile.country = document.getElementById('ob-country').value;
+    window._newProfile.curriculum = document.getElementById('ob-curriculum').value;
+    window._newProfile.parentCode = (document.getElementById('ob-parentcode').value.trim()||'').slice(0,4);
+    window._newProfile.avatar = window._newProfile.avatar || '🦊';
+  }
+  ['1','2','3'].forEach(n=>{
+    document.getElementById('ob-step'+n).classList.toggle('hidden', n!=String(step));
+    document.getElementById('dot'+n).classList.toggle('on', n<=String(step));
+  });
+}
+function renderEmojiPicker(pickerId, previewId){
+  window._newProfile = window._newProfile || {avatar:'🦊'};
+  const wrap = document.getElementById(pickerId);
+  wrap.innerHTML = AVATAR_EMOJIS.map(e=>`<button class="emoji-opt ${e===window._newProfile.avatar?'sel':''}" onclick="pickEmoji('${e}','${pickerId}','${previewId}')">${e}</button>`).join('');
+  document.getElementById(previewId).textContent = window._newProfile.avatar;
+}
+function pickEmoji(e, pickerId, previewId){
+  window._newProfile.avatar = e;
+  document.getElementById(previewId).textContent = e;
+  document.querySelectorAll('#'+pickerId+' .emoji-opt').forEach(b=>b.classList.toggle('sel', b.textContent===e));
+}
+function finishOnboarding(){
+  const p = window._newProfile;
+  const acc = defaultState();
+  Object.assign(acc.profile, p);
+  accounts[p.name] = acc;
+  setActiveStudent(p.name);
+  saveState();
+  showScreen('home');
+  showToast('ברוך/ה הבא/ה, '+p.name+'! 🎉');
+  window._newProfile = null;
+}
+function logout(){
+  if(confirm('להתנתק? כל ההתקדמות שלך תישמר במכשיר זה, ותוכל/י להתחבר שוב.')){
+    session = {mode:null, username:null};
+    saveState();
+    showScreen('splash');
+  }
+}
+function renderEditProfile(){
+  const p = state.profile;
+  document.getElementById('ep-name').value = p.name||'';
+  document.getElementById('ep-password').value = '';
+  document.getElementById('ep-age').value = p.age||'';
+  document.getElementById('ep-grade').value = p.grade||"י'";
+  document.getElementById('ep-lang').value = p.lang||'he';
+  document.getElementById('ep-country').value = p.country||'ישראל';
+  document.getElementById('ep-curriculum').value = p.curriculum||'תוכנית משרד החינוך';
+  document.getElementById('ep-parentcode').value = '';
+}
+function saveProfileEdits(){
+  const newName = document.getElementById('ep-name').value.trim() || state.profile.name;
+  const oldName = state.profile.name;
+  if(newName !== oldName){
+    if(usernameTaken(newName)){ showToast('שם המשתמש הזה כבר תפוס'); return; }
+    delete accounts[oldName];
+    state.profile.name = newName;
+    accounts[newName] = state;
+    if(session.username===oldName) session.username = newName;
+  }
+  const newPass = document.getElementById('ep-password').value.trim();
+  if(newPass) state.profile.password = newPass;
+  const newCode = document.getElementById('ep-parentcode').value.trim().slice(0,4);
+  if(newCode) state.profile.parentCode = newCode;
+  state.profile.age = document.getElementById('ep-age').value;
+  state.profile.grade = document.getElementById('ep-grade').value;
+  state.profile.lang = document.getElementById('ep-lang').value;
+  state.profile.country = document.getElementById('ep-country').value;
+  state.profile.curriculum = document.getElementById('ep-curriculum').value;
+  saveState();
+  showToast('הפרטים עודכנו ✅');
+  showScreen('settings');
+}
 
-            if (firebaseInit && currentUser) {
-                database.ref("users/" + currentUser + "/cookies").set(Math.floor(cookies));
-            }
-        }, 100);
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function ensureDailyReset(){
+  const t = todayStr();
+  if(state.todayDate !== t){
+    if(state.lastActiveDate){
+      const diff = (new Date(t) - new Date(state.lastActiveDate))/86400000;
+      if(diff > 1) state.streak = 0;
+    }
+    state.todayDate = t;
+    state.todayMinutes = 0;
+  }
+  if(state.dailyMissionsDate !== t){
+    state.dailyMissions = [
+      {text:'תרגל/י 5 שאלות', target:5, progress:0, coins:15, key:'practice5'},
+      {text:'למד/י נושא חדש', target:1, progress:0, coins:10, key:'newTopic'},
+      {text:'סיים/י מבחן אחד', target:1, progress:0, coins:20, key:'quiz1'},
+    ];
+    state.dailyMissionsDate = t;
+  }
+  saveState();
+}
+function markActivity(minutes){
+  ensureDailyReset();
+  const t = todayStr();
+  if(state.lastActiveDate !== t){
+    state.streak += 1;
+    state.lastActiveDate = t;
+  }
+  state.todayMinutes += minutes;
+  state.stats.dailyMinutes[t] = (state.stats.dailyMinutes[t]||0) + minutes;
+  saveState();
+}
+function progressMission(key, amount=1){
+  ensureDailyReset();
+  const m = state.dailyMissions.find(x=>x.key===key);
+  if(m && m.progress < m.target){
+    m.progress = Math.min(m.target, m.progress+amount);
+    if(m.progress>=m.target){ addCoins(m.coins); showToast('משימה יומית הושלמה! +'+m.coins+' מטבעות 🪙'); }
+    saveState();
+  }
+}
 
-        setInterval(function() {
-            makeShop();
-        }, 1000);
+function addCoins(amount){ state.coins += amount; state.coinsEarnedTotal += amount; checkAchievements(); saveState(); }
+function checkAchievements(){
+  BADGES.forEach(b=>{
+    if(!state.achievementsUnlocked.includes(b.id) && b.cond(state)){
+      state.achievementsUnlocked.push(b.id);
+      showToast('🏆 הישג חדש: '+b.name);
+    }
+  });
+  saveState();
+}
 
-        updateDisplay();
-        makeShop();
-    </script>
+function renderHome(){
+  ensureDailyReset();
+  document.getElementById('home-greet').textContent = 'שלום, '+(state.profile.name||'תלמיד/ה')+' 👋';
+  document.getElementById('home-avatar-emoji').textContent = state.profile.avatar;
+  document.getElementById('home-avatar').style.background = state.profile.avatarColor;
+  document.getElementById('home-streak').textContent = state.streak;
+  document.getElementById('home-coins').textContent = state.coins;
+
+  const pct = Math.min(100, Math.round((state.todayMinutes/state.dailyGoal)*100));
+  document.getElementById('goal-txt').textContent = pct+'%';
+  const circumference = 188;
+  document.getElementById('goal-ring').setAttribute('stroke-dashoffset', circumference - (circumference*pct/100));
+
+  const missionsWrap = document.getElementById('daily-missions');
+  missionsWrap.innerHTML = state.dailyMissions.map(m=>`
+    <div class="mission-item">
+      <div class="mission-check ${m.progress>=m.target?'done':''}">${m.progress>=m.target?'✓':''}</div>
+      <div class="mtext">${m.text} (${m.progress}/${m.target})</div>
+      <div class="mxp">+${m.coins} 🪙</div>
+    </div>`).join('');
+
+  document.getElementById('daily-tip').textContent = '💡 ' + DAILY_TIPS[new Date().getDate()%DAILY_TIPS.length];
+
+  renderParentMessagesHome();
+  drawWeekChart('week-chart');
+}
+function renderParentMessagesHome(){
+  const cardEl = document.getElementById('parent-msg-card');
+  const msgs = state.parentMessages || [];
+  if(msgs.length===0){
+    cardEl.textContent = 'אין עדיין הודעות מההורים';
+    return;
+  }
+  cardEl.innerHTML = msgs.slice(0,5).map((m,i)=>`
+    <div style="padding:8px 0; ${i>0?'border-top:1px solid var(--line);':''}">
+      <div style="font-size:13.5px;">${m.text}</div>
+      <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${m.date}</div>
+    </div>`).join('');
+}
+function drawWeekChart(canvasId){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const dpr = window.devicePixelRatio||1;
+  const w = canvas.clientWidth||300, h = 110;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const days = [];
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const vals = days.map(d=>state.stats.dailyMinutes[d]||0);
+  const max = Math.max(10, ...vals);
+  const barW = w/7 - 10;
+  const styles = getComputedStyle(document.body);
+  ctx.font = '10px Assistant';
+  days.forEach((d,i)=>{
+    const x = i*(w/7) + 8;
+    const barH = (vals[i]/max) * (h-28);
+    const grad = ctx.createLinearGradient(0,h-28-barH,0,h-28);
+    grad.addColorStop(0, styles.getPropertyValue('--gold'));
+    grad.addColorStop(1, styles.getPropertyValue('--coral'));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, h-28-barH, barW, barH, 5) : ctx.rect(x,h-28-barH,barW,barH);
+    ctx.fill();
+    ctx.fillStyle = styles.getPropertyValue('--text-dim');
+    const lbl = ['א','ב','ג','ד','ה','ו','ש'][new Date(d).getDay()];
+    ctx.fillText(lbl, x+barW/2-3, h-10);
+  });
+}
+
+let currentSubject = null;
+function renderSubjects(){
+  const q = (document.getElementById('subject-search').value||'').trim();
+  const grid = document.getElementById('subjects-grid');
+  const filtered = SUBJECTS.filter(s=>s.name.includes(q));
+  let html = '';
+  if(!q){
+    html += `<button class="subject-tile" style="border-color:var(--violet);" onclick="showScreen('custom-topic')">
+      <span class="ic3">✨</span><span class="sname">מותאם אישית</span>
+    </button>`;
+  }
+  html += filtered.map(s=>{
+    const prog = state.stats.subjectProgress[s.id];
+    const pct = prog && prog.total ? Math.round(100*prog.correct/prog.total) : 0;
+    return `<button class="subject-tile" onclick="openSubject('${s.id}')">
+      <span class="ic3">${s.ic}</span><span class="sname">${s.name}</span>
+      <div class="sprog"><i style="width:${pct}%"></i></div>
+    </button>`;
+  }).join('');
+  grid.innerHTML = html;
+}
+function openSubject(id){
+  currentSubject = SUBJECTS.find(s=>s.id===id);
+  customGradeOverride = null; // חוזרים לזרימה הרגילה, מבטלים כל התאמת כיתה מהזרימה המותאמת אישית
+  currentTopic = null; // אין יותר בחירת נושא קבוע - לנושא ספציפי משתמשים ב"מותאם אישית"
+  document.getElementById('topics-title').textContent = currentSubject.ic+' '+currentSubject.name;
+  document.getElementById('topics-list').innerHTML = '';
+  progressMission('newTopic',1);
+  showScreen('topics');
+}
+let currentTopic = null;
+let customGradeOverride = null;
+function openQuizSetupFromTopic(){
+  showScreen('quiz-setup');
+  document.getElementById('quiz-subject').value = currentSubject.id;
+}
+function renderCustomTopicScreen(){
+  const sel = document.getElementById('custom-subject');
+  sel.innerHTML = SUBJECTS.map(s=>`<option value="${s.id}">${s.ic} ${s.name}</option>`).join('');
+  document.getElementById('custom-topic-input').value = '';
+  document.getElementById('custom-grade').value = state.profile.grade || "י'";
+}
+function confirmCustomTopic(){
+  const subjId = document.getElementById('custom-subject').value;
+  const topic = document.getElementById('custom-topic-input').value.trim();
+  const grade = document.getElementById('custom-grade').value;
+  if(!topic){ showToast('כתוב/כתבי נושא קודם'); return; }
+  currentSubject = SUBJECTS.find(s=>s.id===subjId);
+  currentTopic = topic;
+  customGradeOverride = grade;
+  document.getElementById('topics-title').textContent = '✨ '+currentSubject.ic+' '+currentSubject.name;
+  document.getElementById('topics-list').innerHTML = `<span class="pill">📌 ${topic} • כיתה ${grade}</span>`;
+  progressMission('newTopic',1);
+  showScreen('topics');
+}
+
+const WORKER_URL = "https://ai-teacher-proxy.ai-teacher1.workers.dev";
+
+async function callClaude(messages, system){
+  const body = { model:'claude-sonnet-4-6', max_tokens:1000, messages };
+  if(system) body.system = system;
+
+  let resp;
+  try{
+    resp = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+  }catch(networkErr){
+    throw new Error('כשל בחיבור לשרת ה-AI (בדוק אינטרנט / חיבור ל-Worker).');
+  }
+  let data;
+  try{ data = await resp.json(); }catch(e){ throw new Error('תגובה לא תקינה מהשרת (סטטוס '+resp.status+').'); }
+  if(!resp.ok || data.error){
+    throw new Error((data.error && data.error.message) || ('שגיאת שרת (סטטוס '+resp.status+')'));
+  }
+  const text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+  return text;
+}
+function extractJSON(text){
+  const clean = text.replace(/```json/g,'').replace(/```/g,'').trim();
+  const start = clean.indexOf('{'); const end = clean.lastIndexOf('}');
+  return JSON.parse(clean.slice(start, end+1));
+}
+const NO_LATEX_RULE = ' חשוב מאוד: אל תשתמש בסימוני LaTeX (כמו \\frac, \\times, $...$, \\sqrt) ואל תשתמש בכוכביות של Markdown להדגשה. כתוב מתמטיקה בטקסט רגיל וברור בלבד, למשל: "3/4" במקום \\frac{3}{4}, "x בריבוע" או "x^2" במקום $x^2$, "כפול" או "x" במקום \\times.';
+function sanitizeAIText(t){
+  if(!t) return t;
+  return t
+    .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '$1/$2')
+    .replace(/\\sqrt\{([^{}]*)\}/g, '√($1)')
+    .replace(/\\times/g, '×')
+    .replace(/\\cdot/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\le/g, '≤')
+    .replace(/\\ge/g, '≥')
+    .replace(/\\ne/g, '≠')
+    .replace(/\\pi/g, 'π')
+    .replace(/\\\(/g,'').replace(/\\\)/g,'')
+    .replace(/\\\[/g,'').replace(/\\\]/g,'')
+    .replace(/\$\$?/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1');
+}
+
+let wbCtx = null, wbDrawing = false, wbLastX = 0, wbLastY = 0, wbContext = '';
+function openWhiteboard(contextText, allowSend){
+  if(allowSend === undefined) allowSend = true;
+  wbContext = contextText || '';
+  document.getElementById('wb-modal').classList.remove('hidden');
+  document.getElementById('wb-send-btn').classList.toggle('hidden', !allowSend);
+  const resp = document.getElementById('wb-response');
+  resp.classList.remove('show'); resp.textContent = '';
+  const canvas = document.getElementById('wb-canvas');
+  const wrap = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const w = wrap.clientWidth, h = 320;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.width = w+'px'; canvas.style.height = h+'px';
+  wbCtx = canvas.getContext('2d');
+  wbCtx.scale(dpr,dpr);
+  wbCtx.fillStyle = '#fdfaf2';
+  wbCtx.fillRect(0,0,w,h);
+  wbCtx.strokeStyle = '#1c1c2e';
+  wbCtx.lineWidth = 3;
+  wbCtx.lineCap = 'round';
+  wbCtx.lineJoin = 'round';
+
+  canvas.onpointerdown = (e)=>{
+    wbDrawing = true;
+    const r = canvas.getBoundingClientRect();
+    wbLastX = e.clientX - r.left; wbLastY = e.clientY - r.top;
+  };
+  canvas.onpointermove = (e)=>{
+    if(!wbDrawing) return;
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    wbCtx.beginPath();
+    wbCtx.moveTo(wbLastX, wbLastY);
+    wbCtx.lineTo(x, y);
+    wbCtx.stroke();
+    wbLastX = x; wbLastY = y;
+  };
+  canvas.onpointerup = ()=> wbDrawing = false;
+  canvas.onpointerleave = ()=> wbDrawing = false;
+}
+function clearWhiteboard(){
+  const canvas = document.getElementById('wb-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width/dpr, h = canvas.height/dpr;
+  wbCtx.fillStyle = '#fdfaf2';
+  wbCtx.fillRect(0,0,w,h);
+  document.getElementById('wb-response').classList.remove('show');
+}
+function closeWhiteboard(){
+  document.getElementById('wb-modal').classList.add('hidden');
+}
+async function sendWhiteboardToAI(){
+  const canvas = document.getElementById('wb-canvas');
+  const base64 = canvas.toDataURL('image/png').split(',')[1];
+  const resp = document.getElementById('wb-response');
+  resp.classList.add('show');
+  resp.innerHTML = `<div class="loader" style="padding:10px 0;"><div class="spin-ic"></div>ה-AI בודק את הפתרון...</div>`;
+  const promptText = wbContext
+    ? `זו עבודה בכתב יד של תלמיד/ה על השאלה/נושא הבא: "${wbContext}". תבדוק/י את הדרך והפתרון בתמונה, ותסביר/י בקצרה בעברית אם זה נכון, ואם לא — איפה הטעות ומה לתקן.`
+    : `זו עבודה בכתב יד של תלמיד/ה. תסביר/י בקצרה בעברית מה כתוב שם ואם יש טעויות בדרך הפתרון.`;
+  try{
+    const text = await callClaude([{
+      role:'user',
+      content:[
+        {type:'image', source:{type:'base64', media_type:'image/png', data: base64}},
+        {type:'text', text: promptText}
+      ]
+    }], 'ענה בעברית, בקצרה וברור.' + NO_LATEX_RULE);
+    resp.textContent = sanitizeAIText(text) || 'לא התקבלה תשובה, נסה/י שוב.';
+  }catch(e){
+    resp.textContent = '⚠️ ' + e.message;
+  }
+}
+
+let chatHistory = [];
+let msgIdCounter = 0;
+let replyContext = null; // {text, role}
+function openChat(){
+  showScreen('chat');
+  if(chatHistory.length===0){
+    let ctx = '';
+    if(currentSubject && currentTopic) ctx = ' בנושא '+currentTopic+' ('+currentSubject.name+')';
+    else if(currentSubject) ctx = ' בנושא '+currentSubject.name;
+    pushMsg('ai', 'היי '+(state.profile.name||'')+'! אני המורה הפרטי שלך 🤖'+ctx+'. על מה תרצה/י ללמוד היום?');
+  }
+}
+function copyText(text){
+  const doCopy = ()=>{
+    showToast('הועתק ✅');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(doCopy).catch(()=>{
+      fallbackCopy(text); doCopy();
+    });
+  } else {
+    fallbackCopy(text); doCopy();
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+// מזהה בלוקים בתוך ```...``` (קוד/רשימות שכדאי להעתיק) ומרנדר אותם עם כפתור העתקה,
+// שאר הטקסט מוצג כרגיל.
+function renderMessageBody(text){
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const parts = escaped.split(/```(?:[a-zA-Z]*\n)?([\s\S]*?)```/g);
+  let html = '';
+  parts.forEach((part, i)=>{
+    if(i % 2 === 1){
+      const codeId = 'code_'+Date.now()+'_'+i+'_'+Math.floor(Math.random()*10000);
+      html += `<div class="code-block-wrap"><pre id="${codeId}">${part}</pre><button class="code-copy-btn" onclick="copyCodeBlock('${codeId}')">📋<span class="code-copy-tip">העתק</span></button></div>`;
+    } else if(part){
+      // מסיר גרשיים בודדות/משולשות שנשארו בטעות בטקסט הרגיל (למשל אם ה-AI לא סגר בלוק כמו שצריך),
+      // כדי שאף פעם לא יופיעו ``` גולמיים למשתמש.
+      const clean = part.replace(/`+/g, '');
+      if(clean) html += `<span>${clean}</span>`;
+    }
+  });
+  return html;
+}
+function copyCodeBlock(id){
+  const el = document.getElementById(id);
+  if(el) copyText(el.textContent);
+}
+function copyMessageById(id){
+  const m = chatHistory.find(x=>x.id===id);
+  if(m){ copyText(m.text); }
+  toggleMsgMenu(id);
+}
+function toggleMsgMenu(id){
+  document.querySelectorAll('.msg-dropdown').forEach(d=>{ if(d.id!==('dd_'+id)) d.classList.remove('show'); });
+  const dd = document.getElementById('dd_'+id);
+  if(dd) dd.classList.toggle('show');
+}
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.msg-menu-wrap')){
+    document.querySelectorAll('.msg-dropdown').forEach(d=>d.classList.remove('show'));
+  }
+});
+function replyToMessage(id){
+  const m = chatHistory.find(x=>x.id===id);
+  if(!m) return;
+  replyContext = {text:m.text, role:m.role};
+  document.getElementById('reply-preview-text').textContent = (m.role==='ai'?'🤖 ':'🙋 ') + m.text.slice(0,80);
+  document.getElementById('reply-preview').classList.remove('hidden');
+  document.querySelectorAll('.msg-dropdown').forEach(d=>d.classList.remove('show'));
+  document.getElementById('chat-input').focus();
+}
+function cancelReply(){
+  replyContext = null;
+  document.getElementById('reply-preview').classList.add('hidden');
+}
+function pushMsg(role, text, quotedText){
+  const id = ++msgIdCounter;
+  chatHistory.push({role, text, id});
+  const log = document.getElementById('chat-log');
+
+  const row = document.createElement('div');
+  row.className = 'msg-row '+(role==='ai'?'ai':'user');
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'msg-toolbar';
+  toolbar.innerHTML = `
+    <div class="msg-menu-wrap">
+      <button class="msg-menu-btn" onclick="toggleMsgMenu(${id})">⋮</button>
+      <div class="msg-dropdown" id="dd_${id}">
+        <button onclick="copyMessageById(${id})">📋 העתק</button>
+        <button onclick="replyToMessage(${id})">↩️ הגב על ההודעה</button>
+      </div>
+    </div>`;
+  row.appendChild(toolbar);
+
+  const div = document.createElement('div');
+  div.className = 'msg '+(role==='ai'?'ai':'user');
+  let inner = '';
+  if(quotedText){
+    inner += `<div class="quoted-ref">${quotedText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,90)}</div>`;
+  }
+  inner += renderMessageBody(sanitizeAIText(text));
+  div.innerHTML = inner;
+  row.appendChild(div);
+
+  if(role==='ai'){
+    const wbBtn = document.createElement('button');
+    wbBtn.className = 'wb-under-btn';
+    wbBtn.innerHTML = '📝 לוח כתיבה';
+    wbBtn.onclick = ()=> openWhiteboard(text);
+    row.appendChild(wbBtn);
+  }
+
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+  window.scrollTo(0, document.body.scrollHeight);
+}
+function quickPrompt(p){
+  document.getElementById('chat-input').value = p;
+  sendChat();
+}
+async function sendChat(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const activeReply = replyContext;
+  pushMsg('user', text, activeReply ? activeReply.text : null);
+  input.value = '';
+  cancelReply();
+  const log = document.getElementById('chat-log');
+  const typing = document.createElement('div');
+  typing.className = 'msg ai typing-dots'; typing.innerHTML = '<span></span><span></span><span></span>';
+  log.appendChild(typing); log.scrollTop = log.scrollHeight;
+  try{
+    const apiMsgs = chatHistory.slice(-10).map(m=>({role: m.role==='ai'?'assistant':'user', content:m.text}));
+    if(activeReply){
+      const lastIdx = apiMsgs.length-1;
+      apiMsgs[lastIdx] = {role:'user', content: `(בתגובה להודעה: "${activeReply.text}")\n\n${text}`};
+    }
+    let topicCtx = '';
+    if(currentSubject && currentTopic) topicCtx = ' השיחה מתמקדת כרגע בנושא הספציפי "'+currentTopic+'" במקצוע '+currentSubject.name+' — התמקד/י בנושא הזה ואל תסטה לנושאים כלליים אחרים אלא אם המשתמש מבקש זאת מפורשות.';
+    else if(currentSubject) topicCtx = ' השיחה מתמקדת כרגע במקצוע '+currentSubject.name+'.';
+    const gradeCtx = customGradeOverride ? (' התאם/י את הרמה לכיתה '+customGradeOverride+'.') : '';
+    const sys = 'אתה מורה פרטי סבלני ומעודד לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(state.profile.grade||'')+'.'+topicCtx+gradeCtx+' ענה בעברית פשוטה וברורה, בקצרה יחסית (עד כמה פסקאות), עם דוגמאות כשמתאים. אם המשתמש מבקש הסבר לילד קטן - השתמש באנלוגיות פשוטות מהחיים. היה חם ומעודד. כשפותרים תרגיל בכמה שלבים, או כשיש רשימה של פריטים, תפריד כל שלב/פריט לשורה משלו (ירידת שורה) במקום לדחוס הכל לפסקה אחת רצופה - אין צורך שכל השורות יהיו באותו אורך. אם כותבים קוד, נוסחה מורכבת, או רשימה שהתלמיד/ה כנראה ירצה להעתיק - עטוף את זה בשלוש גרשיים הפוכות (```). חשוב מאוד: בתוך שלוש הגרשיים ההפוכות יופיע אך ורק התוכן הנקי עצמו (הקוד/הרשימה/הנוסחה בלבד) - בלי משפטי פתיחה כמו "הנה הקוד:" או "הרשימה:" ובלי הסברים בתוך הבלוק. אם צריך להקדים משפט, כתוב אותו לפני שלוש הגרשיים ההפוכות, מחוץ לבלוק לגמרי, כדי שכשמעתיקים את הבלוק מקבלים רק את התוכן הטהור.' + NO_LATEX_RULE;
+    const reply = await callClaude(apiMsgs, sys);
+    typing.remove();
+    pushMsg('ai', reply || 'סליחה, לא הצלחתי לענות כרגע. נסה/י שוב.');
+    markActivity(1);
+  }catch(e){
+    typing.remove();
+    pushMsg('ai', '⚠️ ' + (e.message || 'אירעה שגיאה בחיבור. נסה/י שוב בעוד רגע.'));
+  }
+}
+
+/* =========================================================
+   VOICE LESSON / AI CLASSROOM
+   (Speech-to-Text + Text-to-Speech + webcam - הכל בדפדפן, בלי שרת נוסף)
+========================================================= */
+let voiceHistory = [];
+let recognizer = null;
+let isListening = false;
+let isSpeaking = false;
+let soundEnabled = true;
+let webcamStream = null;
+let mouthInterval = null;
+let currentActivity = null;
+let matchState = {selectedLeft:null, connections:{}};
+
+function getSpeechRecognition(){
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+let voiceLessonDifficulty = 'בינוני';
+const DIFFICULTY_GUIDE = {
+  'קל': 'משפטים קצרים מאוד ופשוטים, מילים יומיומיות בלבד (בלי מונחים מקצועיים), דוגמאות מוחשיות מהחיים, הסבר צעד-צעד איטי.',
+  'בינוני': 'משפטים ואוצר מילים ברמת בית ספר רגילה לגיל/כיתה, הסברים ברורים עם דוגמה אחת או שתיים.',
+  'קשה': 'שפה עשירה יותר, מושגים מורכבים יותר וקשרים בין רעיונות, פחות פישוט, ציפייה שהתלמיד/ה כבר מכיר/ה יסודות.',
+  'רמת בגרות': 'רמה אקדמית עם מונחים מקצועיים כשרלוונטי, ניתוח מעמיק וחשיבה ביקורתית, כמו בשאלת בגרות.'
+};
+function renderVoiceLessonSetup(){
+  const ctxEl = document.getElementById('vls-context');
+  if(currentSubject && currentTopic) ctxEl.textContent = 'שיעור ב-'+currentSubject.name+' על הנושא: '+currentTopic;
+  else if(currentSubject) ctxEl.textContent = 'שיעור ב-'+currentSubject.name;
+  else ctxEl.textContent = 'שיעור כללי (בחר/י מקצוע ונושא קודם דרך "למידה" לשיעור ממוקד יותר)';
+  document.getElementById('voice-lesson-diff').value = voiceLessonDifficulty;
+  document.getElementById('voice-lesson-grade').value = customGradeOverride || state.profile.grade || "י'";
+}
+function startVoiceLessonWithSettings(){
+  voiceLessonDifficulty = document.getElementById('voice-lesson-diff').value;
+  customGradeOverride = document.getElementById('voice-lesson-grade').value;
+  openVoiceLesson();
+}
+function openVoiceLesson(){
+  const SR = getSpeechRecognition();
+  if(!SR){
+    showToast('הדפדפן הזה לא תומך בזיהוי דיבור. נסה/י Chrome במחשב או באנדרואיד.');
+    return;
+  }
+  voiceHistory = [];
+  document.getElementById('voice-transcript').innerHTML = '';
+  let title = '🎙️ שיעור עם AI';
+  if(currentSubject && currentTopic) title += ' — '+currentTopic;
+  else if(currentSubject) title += ' — '+currentSubject.name;
+  document.getElementById('voice-lesson-title').textContent = title;
+  setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר');
+  showScreen('voice-lesson');
+  startCamera(); // מנסה להפעיל מצלמה אוטומטית; אם נדחה/לא זמין, נשאר "מצלמה כבויה"
+  generateActivity();
+}
+function setVoiceStatus(text){
+  document.getElementById('voice-status').textContent = text;
+}
+function addVoiceBubble(role, text){
+  voiceHistory.push({role, text});
+  const wrap = document.getElementById('voice-transcript');
+  const row = document.createElement('div');
+  row.className = 'msg-row '+(role==='ai'?'ai':'user');
+  const div = document.createElement('div');
+  div.className = 'msg '+(role==='ai'?'ai':'user');
+  div.textContent = sanitizeAIText(text);
+  row.appendChild(div);
+  wrap.appendChild(row);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+/* ---- camera ---- */
+async function startCamera(){
+  try{
+    webcamStream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById('user-webcam').srcObject = webcamStream;
+    document.getElementById('webcam-off-msg').classList.add('hidden');
+    document.getElementById('lc-video-btn').classList.add('active');
+  }catch(e){
+    document.getElementById('webcam-off-msg').classList.remove('hidden');
+    document.getElementById('lc-video-btn').classList.remove('active');
+  }
+}
+function stopCamera(){
+  if(webcamStream){ webcamStream.getTracks().forEach(t=>t.stop()); webcamStream = null; }
+  document.getElementById('user-webcam').srcObject = null;
+  document.getElementById('webcam-off-msg').classList.remove('hidden');
+  document.getElementById('lc-video-btn').classList.remove('active');
+}
+function toggleCamera(){
+  if(webcamStream) stopCamera();
+  else startCamera();
+}
+
+/* ---- sound toggle ---- */
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  document.getElementById('lc-sound-btn').classList.toggle('active', soundEnabled);
+  document.getElementById('lc-sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+  if(!soundEnabled) stopAISpeaking();
+}
+
+/* ---- robot mouth animation ---- */
+function startMouthAnim(){
+  const mouth = document.getElementById('robot-mouth');
+  clearInterval(mouthInterval);
+  mouthInterval = setInterval(()=> mouth.classList.toggle('open'), 180);
+}
+function stopMouthAnim(){
+  clearInterval(mouthInterval);
+  document.getElementById('robot-mouth').classList.remove('open');
+}
+
+/* ---- speech recognition (talk to the AI) ---- */
+function toggleListening(){
+  if(isSpeaking){ stopAISpeaking(); }
+  if(isListening){ recognizer && recognizer.stop(); return; }
+  const SR = getSpeechRecognition();
+  if(!SR){ showToast('זיהוי דיבור לא נתמך בדפדפן הזה'); return; }
+  recognizer = new SR();
+  recognizer.lang = 'he-IL';
+  recognizer.continuous = false;
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+  recognizer.onstart = ()=>{
+    isListening = true;
+    document.getElementById('lc-mic-btn').classList.add('active');
+    setVoiceStatus('מקשיב... 🎙️');
+  };
+  recognizer.onerror = (e)=>{
+    isListening = false;
+    document.getElementById('lc-mic-btn').classList.remove('active');
+    if(e.error === 'not-allowed' || e.error === 'permission-denied') setVoiceStatus('צריך לאשר גישה למיקרופון בדפדפן');
+    else if(e.error === 'no-speech') setVoiceStatus('לא נשמע דיבור, נסה/י שוב');
+    else setVoiceStatus('שגיאה בזיהוי דיבור, נסה/י שוב');
+  };
+  recognizer.onend = ()=>{ isListening = false; document.getElementById('lc-mic-btn').classList.remove('active'); };
+  recognizer.onresult = (event)=>{
+    const said = event.results[0][0].transcript;
+    if(said && said.trim()) handleVoiceInput(said.trim());
+  };
+  try{ recognizer.start(); }catch(e){ showToast('לא ניתן להפעיל את המיקרופון'); }
+}
+async function handleVoiceInput(text){
+  addVoiceBubble('user', text);
+  setVoiceStatus('חושב/ת... 🤔');
+  try{
+    const apiMsgs = voiceHistory.slice(-10).map(m=>({role: m.role==='ai'?'assistant':'user', content:m.text}));
+    let topicCtx = '';
+    if(currentSubject && currentTopic) topicCtx = ' השיעור מתמקד בנושא "'+currentTopic+'" במקצוע '+currentSubject.name+'.';
+    else if(currentSubject) topicCtx = ' השיעור מתמקד במקצוע '+currentSubject.name+'.';
+    const gradeForLesson = customGradeOverride || state.profile.grade || '';
+    const diffGuide = DIFFICULTY_GUIDE[voiceLessonDifficulty] || '';
+    let activityCtx = '';
+    if(currentActivity){
+      const kind = currentActivity.type==='match' ? 'תרגיל התאמה (מחברים פריטים מהעמודה השמאלית לימין)' : 'תרגיל השלמת משפטים';
+      activityCtx = ' חשוב: כרגע מוצג לתלמיד/ה על המסך '+kind+', שהוא/היא פותר/ת ישירות על ידי לחיצות/הקלדה בלוח, ומגיש/ה בעצמו/ה בכפתור "הגשה". אל תיצור תרגיל חדש בתוך השיחה הקולית ואל תכתיב שאלות/תרגילים בעל פה - זה יבלבל, כי כבר יש תרגיל פעיל על המסך. תפקידך כרגע הוא רק: לענות על שאלות, לתת רמז קטן אם מתבקש, ולעודד להמשיך לפתור את מה שמוצג. אם אמרו לך "טוב"/"בסדר"/"הבנתי" - פשוט עודד/י בקצרה להמשיך לפתור את התרגיל שעל המסך, בלי לפתוח תרגיל חדש בעצמך.';
+    }
+    const sys = 'אתה מורה פרטי מדבר בעל פה (לא בכתב) עם תלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+gradeForLesson+', ברמת קושי '+voiceLessonDifficulty+'.'+topicCtx+activityCtx+' זו שיחה קולית: ענה בעברית בקצרה מאוד (1-3 משפטים לכל היותר), בשפה טבעית לדיבור, בלי רשימות ממוספרות, בלי קוד, בלי גרשיים משולשות, בלי כוכביות, ובלי שום דבר שקשה לשמוע כשמקריאים אותו בקול - רק משפטים מלאים פשוטים. הנחיה קונקרטית לרמה שנבחרה: '+diffGuide+' היה חם, מעודד וסבלני.' + NO_LATEX_RULE;
+    const reply = await callClaude(apiMsgs, sys);
+    const clean = sanitizeAIText(reply || 'סליחה, לא הצלחתי לענות.');
+    addVoiceBubble('ai', clean);
+    markActivity(1);
+    speakText(clean);
+  }catch(e){
+    setVoiceStatus('שגיאה: ' + e.message);
+  }
+}
+
+/* ---- text-to-speech ---- */
+let cachedVoices = [];
+function loadTTSVoices(){
+  if(window.speechSynthesis) cachedVoices = window.speechSynthesis.getVoices();
+}
+if(window.speechSynthesis){
+  loadTTSVoices();
+  window.speechSynthesis.onvoiceschanged = loadTTSVoices;
+}
+function pickHebrewVoice(){
+  let list = cachedVoices && cachedVoices.length ? cachedVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
+  if(!list.length) return null;
+  // מעדיפים קול "he-IL" מדויק, אחר כך כל קול שמתחיל ב-he
+  return list.find(v=>v.lang==='he-IL') || list.find(v=>v.lang && v.lang.toLowerCase().startsWith('he')) || null;
+}
+function speakText(text){
+  if(!soundEnabled){ setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); return; }
+  if(!window.speechSynthesis){ setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'he-IL';
+  utter.rate = 0.95;
+  const heVoice = pickHebrewVoice();
+  if(heVoice){
+    utter.voice = heVoice;
+  } else {
+    // אין קול עברי מותקן במכשיר - זה גורם להקראה שגויה (כאילו קול אנגלי מנסה לקרוא עברית אות-אות).
+    // מדברים בכל זאת (כדי שלא יהיה שקט מוחלט), אבל מזהירים שצריך להתקין קול עברי במכשיר.
+    setVoiceStatus('⚠️ לא נמצא קול עברי במכשיר - יש להתקין קול עברי בהגדרות (ראה הודעה)');
+    showToast('אין קול עברי מותקן - ההקראה עלולה להישמע משובשת. בדוק/י הגדרות TTS/שפה במכשיר.');
+  }
+  utter.onstart = ()=>{ isSpeaking = true; startMouthAnim(); setVoiceStatus('מדבר/ת... 🔊'); };
+  utter.onend = ()=>{ isSpeaking = false; stopMouthAnim(); setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); };
+  utter.onerror = ()=>{ isSpeaking = false; stopMouthAnim(); setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר'); };
+  window.speechSynthesis.speak(utter);
+}
+function stopAISpeaking(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  isSpeaking = false;
+  stopMouthAnim();
+  setVoiceStatus('לחץ/י על המיקרופון ותוכל/י לדבר');
+}
+
+/* ---- AI-generated visual activities (match / fill-blank) ---- */
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+async function generateActivity(){
+  const board = document.getElementById('lb-content');
+  const diagramBox = document.getElementById('lb-diagram');
+  document.getElementById('lb-instructions').textContent = 'מכין תרגיל...';
+  document.getElementById('lb-submit-btn').disabled = true;
+  diagramBox.classList.add('hidden'); diagramBox.innerHTML = '';
+  board.innerHTML = `<div class="loader"><div class="spin-ic"></div></div>`;
+  const subj = currentSubject?.name || 'שפה ואוצר מילים כללי';
+  const topic = currentTopic || 'נושא כללי מהנה ללימוד';
+  // בוחרים סוג תרגיל אקראית בעצמנו (לא סומכים על "בחירה אקראית" של ה-AI, שנוטה לדפוס קבוע)
+  const TYPE_OPTIONS = ['match','fill_blank','multiple_choice','order'];
+  const TYPE_NAMES = {match:'התאמה', fill_blank:'השלמת משפטים', multiple_choice:'שאלה עם אפשרויות', order:'סידור ברצף הנכון'};
+  const chosenType = TYPE_OPTIONS[Math.floor(Math.random()*TYPE_OPTIONS.length)];
+  const TYPE_SCHEMAS = {
+    match: 'תרגיל התאמה (למשל תמונה/אימוג\'י למילה): {"type":"match","instructions":"הסבר קצר וידידותי בעברית מה לעשות","pairs":[{"left":"אימוג\'י או מילה","rightCorrect":"ההתאמה הנכונה"}]} עם 4 עד 5 זוגות.',
+    fill_blank: 'תרגיל השלמת משפטים: {"type":"fill_blank","instructions":"הסבר קצר בעברית","sentences":[{"text":"משפט עם ___ במקום החלק החסר","answer":"התשובה הנכונה","accepted":["חלופות נוספות מקובלות אם יש"]}]} עם 2 עד 3 משפטים.',
+    multiple_choice: 'תרגיל שאלה עם 4 אפשרויות תשובה: {"type":"multiple_choice","instructions":"הסבר קצר בעברית","question":"טקסט השאלה","options":["אפשרות1","אפשרות2","אפשרות3","אפשרות4"],"correctIndex":0,"explanation":"הסבר קצר למה זו התשובה הנכונה"}.',
+    order: 'תרגיל סידור ברצף הנכון (למשל שלבים בתהליך, אירועים כרונולוגיים, מספרים לפי גודל): {"type":"order","instructions":"הסבר קצר בעברית שמסביר לפי מה לסדר","items":["הפריט הראשון בסדר הנכון","הפריט השני","הפריט השלישי","הפריט הרביעי (אופציונלי)"]} עם 3 עד 5 פריטים, ברשימה כבר בסדר הנכון (המערכת תערבב אותם לתצוגה).'
+  };
+  const typeSchema = TYPE_SCHEMAS[chosenType];
+  const sys = 'את/ה מחולל/ת תרגילים לימודיים חזותיים לתלמיד/ה בגיל '+(state.profile.age||'לא ידוע')+', כיתה '+(customGradeOverride || state.profile.grade||'')+', ברמת קושי '+voiceLessonDifficulty+' ('+(DIFFICULTY_GUIDE[voiceLessonDifficulty]||'')+'). החזר/י אך ורק אובייקט JSON תקני, ללא טקסט נוסף, ללא Markdown, במבנה הבא בדיוק (זהו הסוג היחיד שצריך עכשיו): '+typeSchema+'\nבנוסף, אם הנושא נהנה מהמחשה חזותית אמיתית (כמו צורות גיאומטריות, שברים, זוויות, גרפים פשוטים) - הוסף גם שדה עליון בשם "diagram" שמצייר את זה ממש (לא מתאר במילים!): {"diagram":{"shapes":[{"kind":"polygon","points":[[x1,y1],[x2,y2],[x3,y3]],"fill":"#הקסקוד","stroke":"#ffffff"},{"kind":"circle","cx":0,"cy":0,"r":0,"fill":"#הקסקוד"},{"kind":"rect","x":0,"y":0,"w":0,"h":0,"fill":"#הקסקוד"},{"kind":"line","x1":0,"y1":0,"x2":0,"y2":0,"stroke":"#הקסקוד","width":2},{"kind":"text","x":0,"y":0,"text":"תווית","color":"#ffffff"}]}}. כל הקואורדינטות חייבות להיות בטווח 0-300 (רוחב) ו-0-200 (גובה). חשוב מאוד: אם אפשר לצייר צורה (כמו משולש עם צלעות מסומנות) - תמיד עדיף לצייר אותה ב-diagram ולא לתאר אותה רק במילים בתוך instructions/pairs/sentences/question/items.' + NO_LATEX_RULE;
+  const userMsg = 'צור תרגיל חזותי מסוג '+TYPE_NAMES[chosenType]+' במקצוע '+subj+', נושא: '+topic+', רמת קושי: '+voiceLessonDifficulty+'. אם רלוונטי, כלול diagram מצויר. JSON בלבד.';
+  try{
+    const text = await callClaude([{role:'user', content:userMsg}], sys);
+    const activity = extractJSON(text);
+    currentActivity = activity;
+    matchState = {selectedLeft:null, connections:{}};
+    mcState = {selected:null};
+    const instructions = sanitizeAIText(activity.instructions || 'בוא/י נתרגל!');
+    document.getElementById('lb-instructions').textContent = instructions;
+    if(activity.diagram && Array.isArray(activity.diagram.shapes) && activity.diagram.shapes.length){
+      renderDiagram(activity.diagram, diagramBox);
+      diagramBox.classList.remove('hidden');
+    }
+    if(activity.type === 'match') renderMatchActivity(activity, board);
+    else if(activity.type === 'fill_blank') renderFillBlankActivity(activity, board);
+    else if(activity.type === 'multiple_choice') renderMultipleChoiceActivity(activity, board);
+    else if(activity.type === 'order') renderOrderActivity(activity, board);
+    else renderFillBlankActivity(activity, board);
+    document.getElementById('lb-submit-btn').disabled = false;
+    document.getElementById('lb-submit-btn').textContent = '✅ הגשה';
+    addVoiceBubble('ai', instructions);
+    speakText(instructions);
+  }catch(e){
+    board.innerHTML = `
+      <div class="card" style="border-color:var(--coral);">
+        <b style="color:var(--coral);">⚠️ שגיאה בטעינת התרגיל</b>
+        <p style="font-size:12px; color:var(--text-dim); margin:8px 0;">${e.message}</p>
+        <button class="btn btn-teal btn-block" onclick="generateActivity()">נסה שוב</button>
+      </div>`;
+  }
+}
+function renderDiagram(diagram, container){
+  const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const parts = diagram.shapes.map(sh=>{
+    if(sh.kind==='polygon' && Array.isArray(sh.points)){
+      const pts = sh.points.map(p=>p[0]+','+p[1]).join(' ');
+      return `<polygon points="${pts}" fill="${esc(sh.fill||'#2dd4bf')}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="2"/>`;
+    }
+    if(sh.kind==='circle'){
+      return `<circle cx="${sh.cx||0}" cy="${sh.cy||0}" r="${sh.r||10}" fill="${esc(sh.fill||'#2dd4bf')}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="2"/>`;
+    }
+    if(sh.kind==='rect'){
+      return `<rect x="${sh.x||0}" y="${sh.y||0}" width="${sh.w||10}" height="${sh.h||10}" fill="${esc(sh.fill||'#2dd4bf')}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="2"/>`;
+    }
+    if(sh.kind==='line'){
+      return `<line x1="${sh.x1||0}" y1="${sh.y1||0}" x2="${sh.x2||0}" y2="${sh.y2||0}" stroke="${esc(sh.stroke||'#fff')}" stroke-width="${sh.width||2}"/>`;
+    }
+    if(sh.kind==='text'){
+      return `<text x="${sh.x||0}" y="${sh.y||0}" fill="${esc(sh.color||'#fff')}" font-size="13" font-family="Assistant,sans-serif" text-anchor="middle">${esc(sh.text)}</text>`;
+    }
+    return '';
+  }).join('');
+  container.innerHTML = `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">${parts}</svg>`;
+}
+function renderMatchActivity(activity, container){
+  const leftItems = activity.pairs.map((p,i)=>({id:'L'+i, text:sanitizeAIText(p.left)}));
+  const rightItems = shuffleArray(activity.pairs.map((p,i)=>({id:'R'+i, idx:i, text:sanitizeAIText(p.rightCorrect)})));
+  container.innerHTML = `
+    <div class="match-wrap" id="match-wrap">
+      <svg class="match-lines" id="match-lines"></svg>
+      <div class="match-col" id="match-col-left">
+        ${leftItems.map(it=>`<button class="match-item" data-id="${it.id}" onclick="selectMatchItem('${it.id}','left')">${it.text}</button>`).join('')}
+      </div>
+      <div class="match-col" id="match-col-right">
+        ${rightItems.map(it=>`<button class="match-item" data-id="${it.id}" data-idx="${it.idx}" onclick="selectMatchItem('${it.id}','right')">${it.text}</button>`).join('')}
+      </div>
+    </div>`;
+}
+function selectMatchItem(id, side){
+  if(side==='left'){
+    matchState.selectedLeft = id;
+    document.querySelectorAll('#match-col-left .match-item').forEach(b=>b.classList.toggle('sel', b.dataset.id===id));
+  } else {
+    if(!matchState.selectedLeft) return;
+    Object.keys(matchState.connections).forEach(k=>{ if(matchState.connections[k]===id) delete matchState.connections[k]; });
+    matchState.connections[matchState.selectedLeft] = id;
+    matchState.selectedLeft = null;
+    document.querySelectorAll('#match-col-left .match-item').forEach(b=>b.classList.remove('sel'));
+    drawMatchLines();
+  }
+}
+function drawMatchLines(){
+  const svg = document.getElementById('match-lines');
+  const wrap = document.getElementById('match-wrap');
+  if(!svg || !wrap) return;
+  const wrapRect = wrap.getBoundingClientRect();
+  svg.innerHTML = '';
+  Object.entries(matchState.connections).forEach(([leftId, rightId])=>{
+    const l = document.querySelector(`#match-col-left [data-id="${leftId}"]`);
+    const r = document.querySelector(`#match-col-right [data-id="${rightId}"]`);
+    if(!l || !r) return;
+    const lr = l.getBoundingClientRect(), rr = r.getBoundingClientRect();
+    const x1 = lr.right - wrapRect.left, y1 = lr.top - wrapRect.top + lr.height/2;
+    const x2 = rr.left - wrapRect.left, y2 = rr.top - wrapRect.top + rr.height/2;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', '#2dd4bf'); line.setAttribute('stroke-width', '3'); line.setAttribute('stroke-linecap','round');
+    svg.appendChild(line);
+  });
+}
+function renderFillBlankActivity(activity, container){
+  container.innerHTML = activity.sentences.map((s,i)=>{
+    const parts = sanitizeAIText(s.text).split('___');
+    return `<div class="fillblank-row">${parts[0]||''}<input class="fillblank-input" id="fb-${i}">${parts[1]||''}</div>`;
+  }).join('');
+}
+let mcState = {selected:null};
+function renderMultipleChoiceActivity(activity, container){
+  mcState = {selected:null};
+  container.innerHTML = `
+    <div class="q-text" style="margin-bottom:12px;">${sanitizeAIText(activity.question)}</div>
+    <div id="mc-opts-wrap">
+      ${activity.options.map((o,i)=>`<button class="opt-btn" data-i="${i}" onclick="selectMCOption(${i})">${sanitizeAIText(o)}</button>`).join('')}
+    </div>`;
+}
+function selectMCOption(i){
+  mcState.selected = i;
+  document.querySelectorAll('#mc-opts-wrap .opt-btn').forEach((b,idx)=>b.classList.toggle('sel', idx===i));
+}
+function checkMCAnswer(){
+  const correct = mcState.selected === currentActivity.correctIndex;
+  document.querySelectorAll('#mc-opts-wrap .opt-btn').forEach((b,idx)=>{
+    b.classList.add('disabled');
+    if(idx===currentActivity.correctIndex) b.classList.add('correct');
+    else if(idx===mcState.selected) b.classList.add('wrong');
+  });
+  return {correctCount: correct?1:0, total:1};
+}
+let orderState = {pool:[], built:[]};
+function renderOrderActivity(activity, container){
+  const items = activity.items.map((t,i)=>({text:sanitizeAIText(t), origIdx:i}));
+  orderState = {pool: shuffleArray(items), built: []};
+  drawOrderUI(container);
+}
+function drawOrderUI(container){
+  container.innerHTML = `
+    <div class="order-built" id="order-built">${
+      orderState.built.length
+        ? orderState.built.map((it,i)=>`<button class="match-item correct" onclick="unpickOrderItem(${i})">${i+1}. ${it.text}</button>`).join('')
+        : '<span style="font-size:12px; color:var(--text-dim);">לחץ/י על הפריטים למטה, לפי הסדר הנכון</span>'
+    }</div>
+    <div class="order-pool" id="order-pool">
+      ${orderState.pool.map((it,i)=>`<button class="match-item" onclick="pickOrderItem(${i})">${it.text}</button>`).join('')}
+    </div>`;
+}
+function pickOrderItem(poolIdx){
+  const item = orderState.pool.splice(poolIdx,1)[0];
+  orderState.built.push(item);
+  drawOrderUI(document.getElementById('lb-content'));
+}
+function unpickOrderItem(builtIdx){
+  const item = orderState.built.splice(builtIdx,1)[0];
+  orderState.pool.push(item);
+  drawOrderUI(document.getElementById('lb-content'));
+}
+function checkOrderAnswer(){
+  const total = currentActivity.items.length;
+  const builtOrigIdxs = orderState.built.map(it=>it.origIdx);
+  const isFullyCorrect = orderState.pool.length===0 && builtOrigIdxs.length===total && builtOrigIdxs.every((idx,i)=>idx===i);
+  document.querySelectorAll('#order-built .match-item').forEach(b=> b.classList.add(isFullyCorrect?'correct':'wrong'));
+  return {correctCount: isFullyCorrect?total:0, total};
+}
+function checkMatchAnswers(){
+  let correctCount = 0;
+  const total = currentActivity.pairs.length;
+  Object.entries(matchState.connections).forEach(([leftId, rightId])=>{
+    const leftIdx = parseInt(leftId.slice(1));
+    const rightBtn = document.querySelector(`[data-id="${rightId}"]`);
+    const rightIdx = rightBtn ? parseInt(rightBtn.dataset.idx) : -1;
+    const isCorrect = leftIdx === rightIdx;
+    document.querySelector(`[data-id="${leftId}"]`)?.classList.add(isCorrect?'correct':'wrong');
+    rightBtn?.classList.add(isCorrect?'correct':'wrong');
+    if(isCorrect) correctCount++;
+  });
+  return {correctCount, total};
+}
+function normalizeHeb(s){
+  return (s||'')
+    .trim()
+    .replace(/[\u0591-\u05C7]/g,'') // מסיר ניקוד
+    .replace(/["'׳״.,!?;:]/g,'')
+    .replace(/\s+/g,' ')
+    .toLowerCase();
+}
+function levenshtein(a,b){
+  const m=a.length, n=b.length;
+  if(m===0) return n; if(n===0) return m;
+  const dp = Array.from({length:m+1}, ()=> new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i;
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+// בדיקה סלחנית: מתעלמת מניקוד/פיסוק/רווחים, מקבלת התאמת תת-מחרוזת, וסובלת טעויות הקלדה קטנות
+function fuzzyHebMatch(studentAnswer, correctAnswer){
+  const a = normalizeHeb(studentAnswer), b = normalizeHeb(correctAnswer);
+  if(!a || !b) return false;
+  if(a === b) return true;
+  if(a.includes(b) || b.includes(a)) return true;
+  const tolerance = Math.max(1, Math.floor(Math.max(a.length, b.length) * 0.25));
+  return levenshtein(a,b) <= tolerance;
+}
+function checkFillBlankAnswers(){
+  let correctCount = 0;
+  const total = currentActivity.sentences.length;
+  currentActivity.sentences.forEach((s,i)=>{
+    const input = document.getElementById('fb-'+i);
+    const val = (input.value||'').trim();
+    const accepted = (s.accepted && s.accepted.length ? s.accepted.slice() : []);
+    if(s.answer) accepted.push(s.answer);
+    const isCorrect = !!val && accepted.some(a => fuzzyHebMatch(val, a));
+    input.classList.add(isCorrect?'correct-input':'wrong-input');
+    input.disabled = true;
+    if(isCorrect) correctCount++;
+  });
+  return {correctCount, total};
+}
+async function submitActivity(){
+  if(!currentActivity) return;
+  const btn = document.getElementById('lb-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'בודק...';
+  let result;
+  if(currentActivity.type==='match') result = checkMatchAnswers();
+  else if(currentActivity.type==='fill_blank') result = checkFillBlankAnswers();
+  else if(currentActivity.type==='multiple_choice') result = checkMCAnswer();
+  else if(currentActivity.type==='order') result = checkOrderAnswer();
+  else result = checkFillBlankAnswers();
+  const allCorrect = result.total>0 && result.correctCount === result.total;
+  const feedback = allCorrect
+    ? `כל הכבוד! פתרת נכון את כל ${result.total} התרגילים! ממשיכים הלאה.`
+    : `פתרת נכון ${result.correctCount} מתוך ${result.total}. בוא/י נראה מה לתקן, וממשיכים לתרגיל הבא.`;
+  addVoiceBubble('ai', feedback);
+  speakText(feedback);
+  addCoins(allCorrect ? 8 : 3);
+  markActivity(2);
+  setTimeout(()=> generateActivity(), 2600);
+}
+
+function exitVoiceLesson(){
+  if(recognizer) try{ recognizer.stop(); }catch(e){}
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  stopCamera();
+  stopMouthAnim();
+  isListening = false; isSpeaking = false;
+  currentActivity = null;
+  showScreen('topics');
+}
+
+let practiceState = {question:null, answered:false};
+async function startPractice(){
+  showScreen('practice');
+  await loadPracticeQuestion();
+}
+async function loadPracticeQuestion(){
+  const area = document.getElementById('practice-area');
+  area.innerHTML = `<div class="loader"><div class="spin-ic"></div>מכין שאלה חדשה...</div>`;
+  try{
+    const topicForQ = currentTopic || (currentSubject ? topicsFor(currentSubject.id)[Math.floor(Math.random()*topicsFor(currentSubject.id).length)] : 'יסודות');
+    const q = await generateQuestion(currentSubject?.name||'כללי', topicForQ, 'בינוני');
+    practiceState = {question:q, answered:false};
+    renderQuestion(area, q, false);
+  }catch(e){
+    area.innerHTML = `
+      <div class="card" style="border-color:var(--coral);">
+        <b style="color:var(--coral);">⚠️ לא הצלחתי לטעון שאלה מה-AI</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">${e.message}</p>
+        <button class="btn btn-teal btn-block" onclick="loadPracticeQuestion()">נסה שוב</button>
+      </div>`;
+  }
+}
+let recentQuestionsLog = []; // {subject, topic, question} - זיכרון קצר כדי למנוע חזרות
+const QUESTION_ANGLE_HINTS = [
+  'השתמש/י בדוגמה יומיומית ומקורית, לא הדוגמה הכי מוכרת/שכיחה לנושא',
+  'התמקד/י בזווית פחות נפוצה של הנושא',
+  'השתמש/י במספרים או בדוגמה שונים מהרגיל',
+  'נסח/י את השאלה בצורה יצירתית, לא בניסוח סטנדרטי מספר לימוד',
+  'התייחס/י ליישום מעשי או מציאותי של הנושא',
+  'בחר/י היבט שונה של הנושא מזה שהיה מתבקש באופן הכי טבעי'
+];
+async function generateQuestion(subject, topic, difficulty){
+  const sys = 'אתה מחולל שאלות לימודיות. החזר אך ורק אובייקט JSON תקני (ללא טקסט נוסף, ללא Markdown) במבנה: {"question":"טקסט השאלה בעברית","type":"multiple_choice או true_false","options":["אפשרות1","אפשרות2","אפשרות3","אפשרות4"],"correctIndex":0,"explanation":"הסבר קצר בעברית מדוע זו התשובה הנכונה"}. עבור true_false האפשרויות יהיו בדיוק ["נכון","לא נכון"].' + NO_LATEX_RULE;
+  const gradeNote = customGradeOverride ? (', מותאם לרמת כיתה '+customGradeOverride) : '';
+  const recentForThis = recentQuestionsLog
+    .filter(r => r.subject===subject && r.topic===topic)
+    .slice(-8)
+    .map(r => r.question);
+  const avoidNote = recentForThis.length
+    ? ' חשוב מאוד: כבר נשאלו השאלות הבאות באותו נושא - אסור לחזור עליהן או ליצור שאלה דומה מדי להן (אותם מספרים/אותה דוגמה עם שינוי קטן), צור שאלה שונה לגמרי מבחינת התוכן והדוגמה: ' + recentForThis.map(q=>'"'+q+'"').join(' | ') + '.'
+    : '';
+  const angleHint = QUESTION_ANGLE_HINTS[Math.floor(Math.random()*QUESTION_ANGLE_HINTS.length)];
+  const userMsg = 'צור שאלה במקצוע: '+subject+', נושא: '+topic+', רמת קושי: '+difficulty+gradeNote+'. '+angleHint+'.'+avoidNote+' חשוב: JSON בלבד.';
+  const text = await callClaude([{role:'user', content:userMsg}], sys);
+  const q = extractJSON(text);
+  q.question = sanitizeAIText(q.question);
+  q.options = q.options.map(sanitizeAIText);
+  q.explanation = sanitizeAIText(q.explanation);
+  recentQuestionsLog.push({subject, topic, question:q.question});
+  if(recentQuestionsLog.length > 60) recentQuestionsLog = recentQuestionsLog.slice(-60);
+  return q;
+}
+function renderQuestion(container, q, isQuiz, meta){
+  container.innerHTML = `
+    <div class="q-card">
+      ${meta||''}
+      <div class="q-text">${q.question}</div>
+      <div id="opts-wrap">
+        ${q.options.map((o,i)=>`<button class="opt-btn" data-i="${i}" onclick="selectAnswer(${i}, ${isQuiz})">${o}</button>`).join('')}
+      </div>
+      <div class="explain-box" id="explain-box">${q.explanation||''}</div>
+      <button class="wb-under-btn" id="q-wb-btn">📝 לוח כתיבה</button>
+    </div>
+    ${!isQuiz? `<button class="btn btn-teal btn-block hidden" id="next-q-btn" onclick="loadPracticeQuestion()">שאלה הבאה ➡️</button>`:''}
+  `;
+  const wbBtn = document.getElementById('q-wb-btn');
+  if(wbBtn) wbBtn.onclick = ()=> openWhiteboard(q.question, false);
+}
+function selectAnswer(i, isQuiz){
+  if(isQuiz) return selectQuizAnswer(i);
+  if(practiceState.answered) return;
+  practiceState.answered = true;
+  const q = practiceState.question;
+  document.querySelectorAll('#opts-wrap .opt-btn').forEach((b,idx)=>{
+    b.classList.add('disabled');
+    if(idx===q.correctIndex) b.classList.add('correct');
+    else if(idx===i) b.classList.add('wrong');
+  });
+  document.getElementById('explain-box').classList.add('show');
+  const correct = i===q.correctIndex;
+  updateSubjectProgress(currentSubject?.id||'general', correct);
+  if(correct){ addCoins(5); showToast('נכון מאוד! +5 מטבעות 🪙'); }
+  else{
+    saveMistake(q);
+    showToast('לא נורא, ממשיכים ללמוד 💪');
+  }
+  state.stats.totalPractices += 1;
+  progressMission('practice5', 1);
+  markActivity(1);
+  checkAchievements();
+  saveState();
+  const nb = document.getElementById('next-q-btn'); if(nb) nb.classList.remove('hidden');
+}
+function updateSubjectProgress(subjId, correct){
+  if(!state.stats.subjectProgress[subjId]) state.stats.subjectProgress[subjId] = {correct:0,total:0};
+  state.stats.subjectProgress[subjId].total += 1;
+  if(correct) state.stats.subjectProgress[subjId].correct += 1;
+}
+function saveMistake(q){
+  state.mistakes.unshift({
+    id:'m'+Date.now(), subject:currentSubject?.name||'כללי', topic:currentTopic||'',
+    question:q.question, options:q.options, correctIndex:q.correctIndex, explanation:q.explanation,
+    date:new Date().toLocaleDateString('he-IL')
+  });
+  state.mistakes = state.mistakes.slice(0,60);
+  saveState();
+}
+
+function renderQuizSetup(){
+  const sel = document.getElementById('quiz-subject');
+  sel.innerHTML = SUBJECTS.map(s=>`<option value="${s.id}">${s.ic} ${s.name}</option>`).join('');
+  if(currentSubject) sel.value = currentSubject.id;
+}
+let quizState = {questions:[], idx:0, correct:0, timer:null, timeLeft:0, answers:[]};
+async function startQuiz(){
+  const subjId = document.getElementById('quiz-subject').value;
+  const subj = SUBJECTS.find(s=>s.id===subjId);
+  const diff = document.getElementById('quiz-diff').value;
+  const count = parseInt(document.getElementById('quiz-count').value);
+  const timePerQ = parseInt(document.getElementById('quiz-time').value);
+  showScreen('quiz');
+  document.getElementById('quiz-area').innerHTML = `<div class="loader"><div class="spin-ic"></div>בונה מבחן מותאם אישית (${count} שאלות)...</div>`;
+  const questions = [];
+  try{
+    for(let i=0;i<count;i++){
+      const topicForQ = (currentSubject && currentSubject.id === subjId && currentTopic)
+        ? currentTopic
+        : topicsFor(subjId)[i % topicsFor(subjId).length];
+      const q = await generateQuestion(subj.name, topicForQ, diff);
+      questions.push(q);
+    }
+  }catch(e){
+    document.getElementById('quiz-area').innerHTML = `
+      <div class="card" style="border-color:var(--coral);">
+        <b style="color:var(--coral);">⚠️ לא הצלחתי לבנות את המבחן</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">${e.message}</p>
+        <button class="btn btn-teal btn-block" onclick="showScreen('quiz-setup')">חזרה להגדרות המבחן</button>
+      </div>`;
+    return;
+  }
+  quizState = {questions, idx:0, correct:0, timePerQ, timeLeft:timePerQ, answers:[], subj};
+  showQuizQuestion();
+}
+function showQuizQuestion(){
+  const {questions, idx} = quizState;
+  const q = questions[idx];
+  document.getElementById('quiz-progress-txt').textContent = `שאלה ${idx+1} מתוך ${questions.length}`;
+  document.getElementById('quiz-progress-bar').style.width = Math.round((idx/questions.length)*100)+'%';
+  renderQuestion(document.getElementById('quiz-area'), q, true);
+  document.getElementById('explain-box') && (document.getElementById('explain-box').classList.remove('show'));
+  clearInterval(quizState.timer);
+  if(quizState.timePerQ>0){
+    quizState.timeLeft = quizState.timePerQ;
+    document.getElementById('quiz-timer').textContent = quizState.timeLeft+'s';
+    quizState.timer = setInterval(()=>{
+      quizState.timeLeft--;
+      document.getElementById('quiz-timer').textContent = quizState.timeLeft+'s';
+      if(quizState.timeLeft<=0){ clearInterval(quizState.timer); selectQuizAnswer(-1); }
+    },1000);
+  } else {
+    document.getElementById('quiz-timer').textContent = '∞';
+  }
+}
+function selectQuizAnswer(i){
+  clearInterval(quizState.timer);
+  const q = quizState.questions[quizState.idx];
+  const correct = i===q.correctIndex;
+  quizState.answers.push({q, chosen:i, correct});
+  if(correct) quizState.correct++;
+  document.querySelectorAll('#opts-wrap .opt-btn').forEach((b,idx2)=>{
+    b.classList.add('disabled');
+    if(idx2===q.correctIndex) b.classList.add('correct');
+    else if(idx2===i) b.classList.add('wrong');
+  });
+  document.getElementById('explain-box').classList.add('show');
+  updateSubjectProgress(quizState.subj.id, correct);
+  if(!correct) saveMistake(q);
+  setTimeout(()=>{
+    quizState.idx++;
+    if(quizState.idx < quizState.questions.length) showQuizQuestion();
+    else finishQuiz();
+  }, 1400);
+}
+function confirmExitQuiz(){
+  if(confirm('לצאת מהמבחן? ההתקדמות במבחן זה תאבד.')){
+    clearInterval(quizState.timer);
+    showScreen('home');
+  }
+}
+function finishQuiz(){
+  const total = quizState.questions.length;
+  const pct = Math.round((quizState.correct/total)*100);
+  const coinsGain = quizState.correct*10 + (pct===100?20:0);
+  addCoins(coinsGain);
+  state.stats.quizzesTaken += 1;
+  if(pct===100) state.stats.hadPerfectQuiz = true;
+  progressMission('quiz1',1);
+  markActivity(Math.round(total*0.5));
+  checkAchievements();
+  saveState();
+
+  document.getElementById('qr-score').textContent = pct+'%';
+  document.getElementById('qr-sub').textContent = quizState.subj.name+' • '+total+' שאלות';
+  document.getElementById('qr-correct').textContent = quizState.correct+'/'+total;
+  document.getElementById('qr-coins').textContent = '+'+coinsGain;
+  document.getElementById('qr-review').innerHTML = quizState.answers.map((a,i)=>`
+    <div class="mistake-card" style="border-inline-start-color:${a.correct?'var(--teal)':'var(--coral)'}">
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px;">${i+1}. ${a.q.question}</div>
+      <div style="font-size:12px; color:var(--text-dim);">${a.correct?'✅ נכון':'❌ טעות — התשובה הנכונה: '+a.q.options[a.q.correctIndex]}</div>
+    </div>`).join('');
+  showScreen('quiz-results');
+}
+
+function renderMistakes(){
+  const wrap = document.getElementById('mistakes-list');
+  if(state.mistakes.length===0){
+    wrap.innerHTML = `<div class="card" style="text-align:center; color:var(--text-dim);">אין טעויות שמורות כרגע — כל הכבוד! 🎉</div>`;
+    return;
+  }
+  wrap.innerHTML = state.mistakes.map(m=>`
+    <div class="mistake-card">
+      <div style="font-size:11px; color:var(--text-dim); margin-bottom:4px;">${m.subject} • ${m.topic} • ${m.date}</div>
+      <div style="font-weight:700; font-size:13.5px; margin-bottom:6px;">${m.question}</div>
+      <div style="font-size:12px; color:var(--teal); margin-bottom:8px;">תשובה נכונה: ${m.options[m.correctIndex]}</div>
+      <button class="btn btn-ghost" style="font-size:12px; padding:8px 12px;" onclick="retryMistake('${m.id}')">🔁 תרגל/י שאלה דומה</button>
+    </div>`).join('');
+}
+async function retryMistake(id){
+  const m = state.mistakes.find(x=>x.id===id);
+  if(!m) return;
+  currentSubject = SUBJECTS.find(s=>s.name===m.subject) || currentSubject;
+  currentTopic = m.topic;
+  showScreen('practice');
+  await loadPracticeQuestion();
+}
+
+function renderAchievements(){
+  const wrap = document.getElementById('achievements-list');
+  wrap.innerHTML = BADGES.map(b=>{
+    const unlocked = state.achievementsUnlocked.includes(b.id);
+    return `<div class="badge-card ${unlocked?'unlocked':'locked'}">
+      <div class="badge-ic">${b.ic}</div>
+      <div><div class="badge-name">${b.name}</div><div class="badge-desc">${b.desc}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAvatarScreen(){
+  document.getElementById('av-preview').textContent = state.profile.avatar;
+  document.getElementById('av-preview').style.background = state.profile.avatarColor;
+  document.getElementById('av-emoji-picker').innerHTML = AVATAR_EMOJIS.map(e=>
+    `<button class="emoji-opt ${e===state.profile.avatar?'sel':''}" onclick="setAvatarEmoji('${e}')">${e}</button>`).join('');
+  document.getElementById('av-color-picker').innerHTML = AVATAR_COLORS.map(c=>
+    `<button class="color-dot ${c===state.profile.avatarColor?'sel':''}" style="background:${c}" onclick="setAvatarColor('${c}')"></button>`).join('');
+}
+function setAvatarEmoji(e){
+  state.profile.avatar = e;
+  document.getElementById('av-preview').textContent = e;
+  document.querySelectorAll('#av-emoji-picker .emoji-opt').forEach(b=>b.classList.toggle('sel', b.textContent===e));
+}
+function setAvatarColor(c){
+  state.profile.avatarColor = c;
+  document.getElementById('av-preview').style.background = c;
+  document.querySelectorAll('#av-color-picker .color-dot').forEach(b=>b.classList.toggle('sel', b.style.background===hexToRgbStr(c)));
+}
+function hexToRgbStr(hex){
+  const d=document.createElement('div'); d.style.background=hex; document.body.appendChild(d);
+  const rgb=getComputedStyle(d).backgroundColor; document.body.removeChild(d); return rgb;
+}
+function saveAvatar(){ saveState(); showToast('האווטאר נשמר! ✅'); showScreen('settings'); }
+
+/* =========================================================
+   GAMES HUB / ARCADE ENGINE
+========================================================= */
+function renderGamesHub(){
+  const grid = document.getElementById('games-grid');
+  grid.innerHTML = GAMES.map(g=>`
+    <button class="game-tile" style="background:${g.grad};" onclick="openArcadeGame('${g.id}')">
+      <span class="gt-emoji">${g.emoji}</span>
+      <span class="gt-caption">${g.name}</span>
+    </button>`).join('');
+}
+let arcadeState = null;
+function openArcadeGame(gameId){
+  const game = GAMES.find(g=>g.id===gameId);
+  if(!game) return;
+  arcadeState = {game, progress:0, lives:3, coinsEarned:0, ended:false};
+  document.getElementById('arcade-title').textContent = game.name;
+  document.getElementById('arcade-banner').style.background = game.grad;
+  document.getElementById('arcade-emoji').textContent = game.emoji;
+  document.getElementById('arcade-name').textContent = game.name;
+  document.getElementById('arcade-unit-label').textContent = game.unit;
+  document.getElementById('arcade-flavor').textContent = '';
+  updateArcadeHUD();
+  showScreen('arcade-game');
+  loadArcadeQuestion();
+}
+function updateArcadeHUD(){
+  const {game, progress, lives, coinsEarned} = arcadeState;
+  document.getElementById('arcade-lives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(3-lives);
+  document.getElementById('arcade-score-pill').textContent = coinsEarned+' מטבעות';
+  document.getElementById('arcade-progress-txt').textContent = progress+'/'+game.win;
+  document.getElementById('arcade-progress-bar').style.width = Math.round(100*progress/game.win)+'%';
+}
+async function loadArcadeQuestion(){
+  const area = document.getElementById('arcade-question-area');
+  area.innerHTML = `<div class="loader"><div class="spin-ic"></div>מכין שאלה...</div>`;
+  try{
+    const subj = currentSubject?.name || 'ידע כללי (מגוון מקצועות)';
+    const topic = currentTopic || 'שאלות כלליות מעניינות ומגוונות';
+    const q = await generateQuestion(subj, topic, 'בינוני');
+    arcadeState.currentQ = q;
+    area.innerHTML = `
+      <div class="q-card">
+        <div class="q-text">${q.question}</div>
+        <div id="arcade-opts-wrap">
+          ${q.options.map((o,i)=>`<button class="opt-btn" onclick="answerArcade(${i})">${o}</button>`).join('')}
+        </div>
+        <div class="explain-box" id="arcade-explain">${q.explanation||''}</div>
+      </div>`;
+  }catch(e){
+    area.innerHTML = `
+      <div class="card" style="border-color:var(--coral);">
+        <b style="color:var(--coral);">⚠️ לא הצלחתי לטעון שאלה</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">${e.message}</p>
+        <button class="btn btn-teal btn-block" onclick="loadArcadeQuestion()">נסה שוב</button>
+      </div>`;
+  }
+}
+function answerArcade(i){
+  if(!arcadeState || arcadeState.ended) return;
+  const {game, currentQ} = arcadeState;
+  const correct = i === currentQ.correctIndex;
+  document.querySelectorAll('#arcade-opts-wrap .opt-btn').forEach((b,idx)=>{
+    b.classList.add('disabled');
+    if(idx===currentQ.correctIndex) b.classList.add('correct');
+    else if(idx===i) b.classList.add('wrong');
+  });
+  document.getElementById('arcade-explain').classList.add('show');
+  const flavorEl = document.getElementById('arcade-flavor');
+  if(correct){
+    arcadeState.progress++;
+    arcadeState.coinsEarned += 4;
+    addCoins(4);
+    flavorEl.textContent = game.correctFlavor;
+    flavorEl.style.color = 'var(--teal)';
+  } else {
+    arcadeState.lives--;
+    flavorEl.textContent = game.wrongFlavor;
+    flavorEl.style.color = 'var(--coral)';
+  }
+  updateArcadeHUD();
+  markActivity(1);
+
+  setTimeout(()=>{
+    if(arcadeState.lives<=0){
+      endArcadeGame(false);
+    } else if(arcadeState.progress>=game.win){
+      endArcadeGame(true);
+    } else {
+      loadArcadeQuestion();
+    }
+  }, 1400);
+}
+function endArcadeGame(won){
+  arcadeState.ended = true;
+  const {game, coinsEarned} = arcadeState;
+  const area = document.getElementById('arcade-question-area');
+  if(won){
+    const bonus = 20;
+    addCoins(bonus);
+    area.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-size:40px; margin-bottom:8px;">🏆</div>
+        <b style="font-size:16px;">ניצחת ב-${game.name}!</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">סה"כ הרווחת ${coinsEarned+bonus} מטבעות (כולל בונוס ניצחון)</p>
+        <div class="grid2">
+          <button class="btn btn-teal" onclick="openArcadeGame('${game.id}')">🔁 שחק שוב</button>
+          <button class="btn btn-gold" onclick="showScreen('games-hub')">🎮 למשחקים</button>
+        </div>
+      </div>`;
+  } else {
+    area.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-size:40px; margin-bottom:8px;">💔</div>
+        <b style="font-size:16px;">נגמרו החיים ב-${game.name}</b>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:10px 0;">הרווחת ${coinsEarned} מטבעות בכל זאת — נסה/י שוב!</p>
+        <div class="grid2">
+          <button class="btn btn-teal" onclick="openArcadeGame('${game.id}')">🔁 נסה שוב</button>
+          <button class="btn btn-gold" onclick="showScreen('games-hub')">🎮 למשחקים</button>
+        </div>
+      </div>`;
+  }
+  document.getElementById('arcade-flavor').textContent = '';
+}
+function exitArcadeGame(){
+  if(arcadeState && !arcadeState.ended && arcadeState.progress>0){
+    if(!confirm('לצאת מהמשחק? ההתקדמות במשחק הזה תאבד (המטבעות שכבר הרווחת נשמרו).')) return;
+  }
+  showScreen('games-hub');
+}
+
+function renderShop(){
+  document.getElementById('shop-coins').textContent = state.coins;
+  document.getElementById('shop-list').innerHTML = SHOP_ITEMS.map(it=>{
+    const owned = state.owned.includes(it.id);
+    return `<div class="shop-item">
+      <div class="sic">${it.ic}</div>
+      <div class="sinfo"><div class="sname2">${it.name}</div><div style="font-size:11px; color:var(--text-dim);">🪙 ${it.price}</div></div>
+      <button class="buy-btn" ${owned?'disabled':''} onclick="buyItem('${it.id}')">${owned?'נרכש ✓':'קנה'}</button>
+    </div>`;
+  }).join('');
+}
+function buyItem(id){
+  const item = SHOP_ITEMS.find(i=>i.id===id);
+  if(state.coins < item.price){ showToast('אין מספיק מטבעות 😕'); return; }
+  state.coins -= item.price;
+  state.owned.push(id);
+  saveState();
+  showToast('נרכש: '+item.name+' 🎉');
+  renderShop();
+}
+
+function toggleDark(){
+  state.darkMode = !state.darkMode;
+  document.body.classList.toggle('light', !state.darkMode);
+  document.getElementById('dark-toggle').classList.toggle('on', state.darkMode);
+  saveState();
+}
+function changeLang(l){ state.profile.lang = l; saveState(); showToast(l==='he'?'עברית נבחרה':'English selected'); }
+function setDailyGoal(v){
+  state.dailyGoal = parseInt(v);
+  document.getElementById('settings-goal') && (document.getElementById('settings-goal').value = v);
+  document.getElementById('pd-goal') && (document.getElementById('pd-goal').value = v);
+  saveState(); showToast('יעד יומי עודכן ל-'+v+' דקות');
+}
+
+function renderStatistics(){
+  drawWeekChart('stats-week-chart');
+  const wrap = document.getElementById('stats-subjects');
+  const entries = Object.entries(state.stats.subjectProgress);
+  if(entries.length===0){
+    wrap.innerHTML = `<div class="card" style="color:var(--text-dim); text-align:center;">עדיין אין מספיק נתונים — תתחיל/י לתרגל!</div>`;
+  } else {
+    wrap.innerHTML = entries.map(([id,p])=>{
+      const s = SUBJECTS.find(x=>x.id===id);
+      const pct = Math.round(100*p.correct/p.total);
+      return `<div class="card" style="margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; font-weight:700;">
+          <span>${s?s.ic+' '+s.name:id}</span><span>${pct}%</span>
+        </div>
+        <div class="progress-outer"><div class="progress-inner" style="width:${pct}%; background:${pct>=70?'linear-gradient(90deg,var(--teal),#1a9c8c)':'linear-gradient(90deg,var(--coral),#c94b4b)'}"></div></div>
+      </div>`;
+    }).join('');
+  }
+  const avg = entries.length ? Math.round(entries.reduce((a,[,p])=>a+ (p.correct/p.total),0)/entries.length*100) : 0;
+  document.getElementById('stats-forecast').innerHTML = avg>0
+    ? `לפי קצב ההתקדמות הנוכחי, רמת ההצלחה הממוצעת שלך היא כ-${avg}%. המשך/י כך כדי לשפר עוד! 📈`
+    : `תרגל/י כמה שאלות כדי לקבל תחזית מותאמת אישית.`;
+}
+
+function requestParentAccess(){
+  const code = state.profile.parentCode;
+  if(!code){
+    showToast('לא הוגדר קוד בקרת הורים — הגדר/י אחד בעריכת פרטים אישיים');
+    return;
+  }
+  const entered = prompt('הזן/י קוד בקרת הורים (4 ספרות):');
+  if(entered === null) return;
+  if(entered.trim() !== code){ showToast('קוד שגוי 😕'); return; }
+  showScreen('parent-dash');
+}
+
+function renderParentDash(){
+  document.getElementById('pd-today').textContent = state.todayMinutes+' דק\'';
+  document.getElementById('pd-streak').textContent = state.streak;
+  document.getElementById('pd-coins').textContent = state.coins;
+  const entries = Object.entries(state.stats.subjectProgress);
+  const avg = entries.length ? Math.round(entries.reduce((a,[,p])=>a+(p.correct/p.total),0)/entries.length*100) : 0;
+  document.getElementById('pd-avg').textContent = avg+'%';
+  const weak = entries.filter(([,p])=>p.total>=2 && p.correct/p.total<0.6).map(([id])=>SUBJECTS.find(s=>s.id===id)).filter(Boolean);
+  document.getElementById('pd-weak').innerHTML = weak.length
+    ? weak.map(s=>`<span class="pill" style="margin:3px;">${s.ic} ${s.name}</span>`).join('')
+    : `<span style="color:var(--text-dim); font-size:13px;">אין עדיין נושאים חלשים מזוהים 🙂</span>`;
+  document.getElementById('pd-goal').value = state.dailyGoal;
+  document.getElementById('pd-block-toggle').classList.toggle('on', state.blockGames);
+}
+function toggleBlockGames(){
+  state.blockGames = !state.blockGames;
+  document.getElementById('pd-block-toggle').classList.toggle('on', state.blockGames);
+  saveState();
+  showToast(state.blockGames?'משחקים נחסמו':'משחקים נפתחו');
+}
+function sendParentMessage(){
+  const val = document.getElementById('pd-msg').value.trim();
+  if(!val) return;
+  state.parentMessages.unshift({text:val, date:new Date().toLocaleString('he-IL'), read:false});
+  saveState();
+  document.getElementById('pd-msg').value = '';
+  showToast('ההודעה נשלחה לתלמיד/ה 📩');
+}
+
+function init(){
+  loadAccounts();
+  loadSession();
+  if(session.mode==='student' && !accounts[session.username]) session = {mode:null, username:null};
+  Object.keys(accounts).forEach(u=> migrateAccount(accounts[u]));
+
+  if(session.mode==='student'){
+    state = accounts[session.username];
+    document.body.classList.toggle('light', !state.darkMode);
+    ensureDailyReset();
+    showScreen('home');
+  } else {
+    showScreen('splash');
+  }
+  saveState();
+}
+init();
+</script>
 </body>
 </html>
